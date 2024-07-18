@@ -1,0 +1,60 @@
+mode: sequential
+
+length: 5
+
+splits:
+  train: {path: "data/train", samples: 160}
+  val:   {path: "data/train", samples: 20}
+  test:  {path: "data/test", samples: 20}
+minizinc_prefix: ""
+
+predicates:
+  "p(A,B, C)": "A + B = C"
+  "q(A,B,C)": "A - B = C"
+
+formula: "G (p(X,Y,Z) <-> X q(X,Y,Z) )"
+
+types:
+  mnist_t:
+    0: "mnist/0"
+    1: "mnist/1"
+    2: "mnist/2"
+    3: "mnist/3"
+    4: "mnist/4"
+    5: "mnist/5"
+    6: "mnist/6"
+    7: "mnist/7"
+    8: "mnist/8"
+    9: "mnist/9"
+  svhn_t:
+    0: "svhn/0"
+    1: "svhn/1"
+    2: "svhn/2"
+    3: "svhn/3"
+    4: "svhn/4"
+    5: "svhn/5"
+    6: "svhn/6"
+    7: "svhn/7"
+    8: "svhn/8"
+    9: "svhn/9"
+
+domains:
+  X: mnist_t
+  Y: mnist_t
+  Z: svhn_t
+
+streams:
+  X: +x
+  Y: +y
+  Z: -z
+
+avoid_absorbing_state:
+  accepting: { "exponential": 1e-3 }
+  rejecting: { "exponential": 1e-3 }
+
+truncate_on_absorbing:
+  accepting: True
+  rejecting: True
+
+seed: 12345
+patience: 1000

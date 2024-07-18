@@ -1,0 +1,149 @@
+test:
+  T:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  U:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  V:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  W:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  X:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  Y:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  Z:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+train:
+  T:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  U:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  V:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  W:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  X:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  Y:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  Z:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+val:
+  T:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  U:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  V:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  W:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  X:
+  - airplane
+  - automobile
+  - bird
+  - cat
+  - deer
+  Y:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  Z:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser

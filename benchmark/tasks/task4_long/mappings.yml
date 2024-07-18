@@ -1,0 +1,34 @@
+p_0:
+  constraint: strictly_decreasing([A,B,C])
+  predicate: Z
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: output
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    A: X
+    B: Y
+    C: Z
+p_1:
+  constraint: strictly_increasing([A,B,C])
+  predicate: Z
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: output
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    A: X
+    B: Y
+    C: Z

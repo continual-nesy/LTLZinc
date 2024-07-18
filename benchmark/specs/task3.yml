@@ -1,0 +1,57 @@
+mode: sequential
+
+length: [10, 20]
+
+splits:
+  train: {path: "data/train", samples: 160}
+  val:   {path: "data/train", samples: 20}
+  test:  {path: "data/test", samples: 20}
+
+minizinc_prefix: |
+  include "all_different.mzn";
+
+predicates:
+  "p(A,B,C,D,E,F)": "all_different([A,B,C,D,E,F])"
+
+formula: "G p(U,V,W,X,Y,Z)"
+
+types:
+  fmnist_t:
+    bag: "fmnist/bag"
+    boot: "fmnist/boot"
+    coat: "fmnist/coat"
+    dress: "fmnist/dress"
+    pullover: "fmnist/pullover"
+    sandal: "fmnist/sandal"
+    shirt: "fmnist/shirt"
+    sneaker: "fmnist/sneaker"
+    top: "fmnist/top"
+    trouser: "fmnist/trouser"
+
+domains:
+  U: fmnist_t
+  V: fmnist_t
+  W: fmnist_t
+  X: fmnist_t
+  Y: fmnist_t
+  Z: fmnist_t
+
+streams:
+  U: +u
+  V: +v
+  W: +w
+  X: -x
+  Y: -y
+  Z: -z
+
+
+avoid_absorbing_state:
+  accepting: { "exponential": 1e-3 }
+  rejecting: { "exponential": 1e-3 }
+
+truncate_on_absorbing:
+  accepting: False
+  rejecting: False # If true, it would violate the constraint only on the last time step.
+
+seed: 12345
+patience: 1000

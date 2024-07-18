@@ -1,0 +1,68 @@
+program: main.py
+method: grid
+project: ltlzinc
+name: task6
+metric:
+  name: val/label_acc
+  goal: maximize
+parameters:
+  task:
+    value: task1
+  device:
+    value: cuda:0
+  batch_size:
+    value: 32
+  epochs:
+    value: 30
+  teacher_forcing:
+    value: True
+  lr:
+    value: -1e-3
+  sequence_lambda:
+    value: 1.0
+  grad_clipping:
+    value: 10.0
+
+  seed:
+    values:
+      - 12345
+      - 67890
+      - 88888
+      #- 22222
+  backbone_module:
+    values:
+      - independent
+      - dataset
+      # - domain
+  constraint_module:
+    values:
+      - mlp:8
+      - scallop:difftopkproofs:3:3
+  dfa_module:
+    values:
+      - mlp:8
+      - logprob
+      - scallop:difftopkproofs:3:3
+  train_on_irrelevant:
+    values:
+      - True
+      #- False
+  pretraining_epochs:
+    values:
+      #- 0
+      - 5
+      #- 10
+    supervision_lambda:
+      values:
+        - 0.0
+        #- 1.0
+    constraint_lambda:
+      values:
+        - 0.0
+        - 1.0
+    successor_lambda:
+      values:
+        - 0.0
+        - 1.0
+
+# Total: 192 experiments

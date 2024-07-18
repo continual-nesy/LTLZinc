@@ -1,0 +1,11 @@
+__pycache__/
+tmp/
+.idea/
+data/
+baselines/sequential_tasks/__pycache__/
+baselines/sequential_tasks/wandb/
+baselines/sequential_tasks/generate_readme_stub.py
+baselines/sequential_tasks/*.bak
+baselines/incremental_tasks
+debug.yml
+generate_readme_stub.py

@@ -1,0 +1,54 @@
+mode: sequential
+
+length: [10, 20]
+
+splits:
+  train: {path: "data/train", samples: 160}
+  val:   {path: "data/train", samples: 20}
+  test:  {path: "data/test", samples: 20}
+
+minizinc_prefix: |
+  include "strictly_decreasing.mzn";
+  include "strictly_increasing.mzn";
+
+predicates:
+  "p(A,B,C)": "strictly_decreasing([A,B,C])"
+  "q(A,B,C)": "strictly_increasing([A,B,C])"
+
+formula: "G (p(X,Y,Z) <-> ! q(X,Y,Z)) & ((G (p(X,Y,Z) <-> X q(X,Y,Z)) ) | (G (q(X,Y,Z) <-> X p(X,Y,Z)) ))"
+
+
+types:
+  mnist_t:
+    0: "mnist/0"
+    1: "mnist/1"
+    2: "mnist/2"
+    3: "mnist/3"
+    4: "mnist/4"
+    5: "mnist/5"
+    6: "mnist/6"
+    7: "mnist/7"
+    8: "mnist/8"
+    9: "mnist/9"
+
+domains:
+  X: mnist_t
+  Y: mnist_t
+  Z: mnist_t
+
+streams:
+  X: +x
+  Y: -y
+  Z: +z
+
+
+avoid_absorbing_state:
+  accepting: { "exponential": 1e-3 }
+  rejecting: { "exponential": 1e-3 }
+
+truncate_on_absorbing:
+  accepting: True
+  rejecting: True
+
+seed: 12345
+patience: 1000

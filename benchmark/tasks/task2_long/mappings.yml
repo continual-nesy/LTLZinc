@@ -1,0 +1,51 @@
+p_0:
+  constraint: A >= B /\ B >= C
+  predicate: Z
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: output
+      name: z
+  substitutions:
+    A: X
+    B: Y
+    C: Z
+p_1:
+  constraint: A - B = C
+  predicate: Z
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: output
+      name: z
+  substitutions:
+    A: X
+    B: Y
+    C: Z
+p_2:
+  constraint: A div B = C
+  predicate: Z
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: output
+      name: z
+  substitutions:
+    A: X
+    B: Y
+    C: Z

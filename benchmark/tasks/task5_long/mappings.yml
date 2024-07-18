@@ -1,0 +1,30 @@
+p_0:
+  constraint: B == (A + 1) mod 10
+  predicate: Y
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: output
+      name: y
+  substitutions:
+    A: X
+    B: Y
+p_1:
+  constraint: C == (A + B) mod 10
+  predicate: Z
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: output
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    A: X
+    B: Y
+    C: Z

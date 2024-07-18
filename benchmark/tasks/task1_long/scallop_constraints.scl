@@ -1,0 +1,8 @@
+type out_t(u8), out_u(u8), out_v(u8), out_w(u8), out_x(u8), var_y(u8), var_z(u8)
+type p_0(), p_1()
+
+
+rel p_0() = var_y(y), var_z(z), y < z
+rel p_1() = out_t(xx), out_u(xx), out_v(xx), out_w(xx), out_x(xx) // All_equal constraint
+
+

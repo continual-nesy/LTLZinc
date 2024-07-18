@@ -1,0 +1,11 @@
+states:
+- 0
+- 1
+initial: 0
+accepting:
+- 0
+0:
+  0: p_0
+  1: ~p_0
+1:
+  1: 'True'

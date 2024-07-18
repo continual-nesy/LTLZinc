@@ -1,0 +1,130 @@
+# Example configuration file for an LTLZinc problem.
+
+# [Mandatory] Mode of the task:
+#   sequential: Generate a single task with samples composed of traces of images.
+#   sequential_positive_only: same as sequential, but only generate traces satisfying the formula.
+#   incremental: Generate an incremental collection of tasks. Each task is a collection of non-temporal samples which can be shuffled.
+mode: sequential # sequential: Generate a single task with samples composed of traces of images.
+
+# [Mandatory] Target length. For sequential/sequential_positive_only is the length of each sample. For incremental is the number of tasks.
+#   Can be a fixed value (int), or a [min, max] pair (not for incremental mode). In the latter case, traces will have a random length between min and max.
+length: 10 # [5, 10]
+
+# [Mandatory] Dataset splits. Each name is associated with a data path and the number of samples to generate. For sequence/sequence_positive_only, this corresponds to the total number of samples, for incremental, this is the number of samples for a single task.
+splits:
+  train: {path: "data/train", samples: 10}
+  val:   {path: "data/test", samples: 10}
+  test:  {path: "data/test", samples: 10}
+  test_ood: {path: "data/test", samples: 10} # Example for out-of-distribution experiment.
+  # domain_adaptation: {path: "data/domain_adaptation", samples: 10} # Another example.
+
+
+# [Optional] Prefix code for all the generated MiniZinc programs. It can contain included libraries, additional constraints, helper functions, etc.
+minizinc_prefix: |
+  include "all_equal.mzn";
+
+# [Mandatory] Predicate dictionary. It maps symbolic names (e.g. p, q) to MiniZinc constraints. Placeholders (e.g., A,B,C) will be syntactically replaced.
+predicates:
+  "p(A,B,C)": "A + B = C" # minizinc syntax. Variables here will be syntactically replaced with those from the formula.
+  "q(A,B,C)": "all_equal([A,B,C])"
+
+
+# [Mandatory] LTL formula. It must be specified in flloat (https://github.com/whitemech/flloat) syntax.
+#   Predicate names will be replaced according to the predicate dictionary (place-holders, A,B,C, will be replaced with variables, X,Y,Z).
+formula: "p(X,Y,Z) & X q(T,U,V) & X X q(X,Y,Z)"
+
+# [Mandatory] Data types. They associate each value to the path containing image samples.
+#   A data type can be integer, or an enumeration (strings). Enumerations will be sorted lexicographically, regardless of the order they appear here (e.g. automobile < bird < cat < dog).
+#   Different data types can associate the same value to different image samples (e.g. 0 -> mnist/0, and 0 -> svhn/0), or be composed of different collections of values (e.g. mnist_05 = {0,1,2,3,4,5}, mnist_69 = {6,7,8,9}).
+#   This feature allows to easily define out-of-distribution or domain-adaptation splits.
+#   NOTE: to avoid MiniZinc errors, each enumeration is defined as a subset of "global_enum_t" type. *Do not* define a type with this name!
+types:
+  mnist_t:
+    0: "mnist/0"
+    1: "mnist/1"
+    2: "mnist/2"
+    3: "mnist/3"
+    4: "mnist/4"
+    5: "mnist/5"
+    6: "mnist/6"
+    7: "mnist/7"
+    8: "mnist/8"
+    9: "mnist/9"
+  fmnist_t:
+    bag: "fmnist/bag"
+    boot: "fmnist/boot"
+    coat: "fmnist/coat"
+    dress: "fmnist/dress"
+    pullover: "fmnist/pullover"
+    sandal: "fmnist/sandal"
+    shirt: "fmnist/shirt"
+    sneaker: "fmnist/sneaker"
+    top: "fmnist/top"
+    trouser: "fmnist/trouser"
+
+  # You can define other domains with subsets of variables, for out-of-distribution experiments.
+  fmnist_05_t: # You can also change the path for each class (e.g. fmnist05/bag) to provide disjoint images for domain adaptation experiments.
+    bag: "fmnist/bag"
+    boot: "fmnist/boot"
+    coat: "fmnist/coat"
+    dress: "fmnist/dress"
+    pullover: "fmnist/pullover"
+
+# [Mandatory] Domain association for each variable appearing in the LTL formula. If it is mapping {variable: type}, every split will use the specified type.
+#   If it is a mapping {variable: dict}, it will assign a different type for each split. This can be useful for out-of-distribution and domain-adaptation experiments.
+#   NOTE: Either manually add every entry defined in "splits", or add a "default" entry to cover unspecified splits.
+domains:
+  X: mnist_t
+  Y: mnist_t
+  Z: mnist_t
+  T: fmnist_t # T will always be of type "fmnist_t".
+  U:
+    default: fmnist_05_t # Every split (except test_ood) will define U as type "fmnist_05_t".
+    test_ood: fmnist_t # Out-of-distribution test set split will define U as type "fmnist_t".
+  V: fmnist_t
+
+# [Mandatory] Mapping between formula variables and image streams. This allows to multiplex variables at different time-steps.
+#   Streams can optionally be annotated with "modes". Input mode: "+" (default), Output mode: "-".
+#   These annotations do not affect the generation pipeline, but tell your agent which variables depend on the others.
+streams: # In this example there is a 1-to-1 mapping between variables and streams. The agent sees 6 streams of images
+  X: xx # Mapped to (img_xx, var_xx, direction: input) in csv annotations.
+  Y: yy
+  Z: -zz # This is an output stream, mapped to (img_zz, var_zz, direction: output) in csv_annotations.
+  T: +tt # Explicit input, same as "tt".
+  U: uu
+  V: -vv
+#streams: # In this different example, the agent sees 3 streams of images, but their role changes over time.
+#   (e.g. In every state where there is a constraint on X, the agent will receive an image for X,
+#    in every state where there is a constraint on T, the agent will receive an image for T,
+#    in a state where neither X nor T are relevant, the generator will choose to present either image randomly).
+#  X: str1
+#  Y: str2
+#  Z: str3
+#  T: str1
+#  U: str2
+#  Z: str3
+# NOTE: The generator will raise an error if there is stream ambiguity at some time-step (e.g. if it encounters a state which depends both on the value of X and Z).
+
+
+# [Optional] Perform look-ahead and try to avoid being trapped into an absorbing state.
+#   If defined, both strategies for accepting and rejecting absorbing states must be defined.
+#   False: next state will be uniformly sampled.
+#   True: next state will be uniformly sampled, after removing every accepting/rejecting absorbing state from the candidates.
+#   linear: rate: let t be the number of times an accepting/rejecting absorbing state has been a potential successor so far, then sample absorbing states with probability rate * t, and every other state uniformly.
+#   exponential: rate: like the linear case, but absorbing states are sampled with 1 - e^(-rate * t) probability.
+avoid_absorbing_state:
+  accepting: False
+  rejecting: { "exponential": 1e-3 }
+
+# [Optional] Upon entering an absorbing state, prematurely truncate the sequence (e.g., because new samples would be irrelevant for learning purposes).
+truncate_on_absorbing:
+  accepting: True
+  rejecting: False
+
+# [Optional] Random seed for reproducibility.
+#   IMPORTANT: Due to a bug in the flloat library, a generated dataset will not be 100% reproducible,
+#   because multiple equivalent automata can be generated from the same formula during different executions, and it is not possible too deterministically fix one.
+seed: 12345
+
+# [Optional] Patience hyper-parameter, for rejection sampling.
+patience: 1000
