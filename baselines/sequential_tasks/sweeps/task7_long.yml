@@ -1,13 +1,13 @@
 program: main.py
 method: grid
 project: ltlzinc
-name: task8
+name: task7_long
 metric:
   name: val/label_acc
   goal: maximize
 parameters:
   task:
-    value: task8
+    value: task7_long
   device:
     value: cuda:0
   batch_size:

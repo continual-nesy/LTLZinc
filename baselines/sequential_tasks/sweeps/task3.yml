@@ -7,21 +7,23 @@ metric:
   goal: maximize
 parameters:
   task:
-    value: task1
+    value: task3
   device:
     value: cuda:0
   batch_size:
     value: 32
   epochs:
-    value: 30
+    value: 10
   teacher_forcing:
-    value: True
+    value: False
   lr:
     value: -1e-3
   sequence_lambda:
     value: 1.0
   grad_clipping:
     value: 10.0
+  epoch_timeout:
+    value: 15
 
   seed:
     values:
@@ -31,7 +33,7 @@ parameters:
       #- 22222
   backbone_module:
     values:
-      - independent
+      #- independent
       - dataset
       # - domain
   constraint_module:
@@ -41,28 +43,37 @@ parameters:
   dfa_module:
     values:
       - mlp:8
+      - gru:8
+      - prob
       - logprob
       - scallop:difftopkproofs:3:3
-  train_on_irrelevant:
+  scallop_e2e:
     values:
       - True
-      #- False
+      - False
+  train_on_irrelevant:
+    values:
+      #- True
+      - False
   pretraining_epochs:
     values:
       #- 0
       - 5
       #- 10
-    supervision_lambda:
-      values:
-        - 0.0
-        #- 1.0
-    constraint_lambda:
-      values:
-        - 0.0
-        - 1.0
-    successor_lambda:
-      values:
-        - 0.0
-        - 1.0
-
-# Total: 192 experiments
+  supervision_lambda:
+    values:
+      - 0.1
+      #- 1.0
+  constraint_lambda:
+    values:
+      #- 0.0
+      - 0.1
+      #- 1.0
+  successor_lambda:
+    values:
+      #- 0.0
+      - 1.0
+  sequence_loss:
+    values:
+      - bce
+      - fuzzy
