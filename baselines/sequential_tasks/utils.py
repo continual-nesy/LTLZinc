@@ -294,9 +294,6 @@ def preflight_checks(opts):
             "Top-k values for Scallop must be positive integers, found train_k={}, test_k={}".format(dm[2], dm[3])
         opts["dfa_module"] = {"type": "scallop", "provenance": dm[1], "train_k": int(dm[2], 10), "test_k": int(dm[3], 10)}
 
-    assert not opts["scallop_e2e"] or opts["constraint_module"]["type"] == "scallop", \
-        "Invalid constraint module. Use a Scallop program along with scallop_e2e=True, found {}.".format(opts["constraint_module"]["type"])
-
     # # Check whether annotations exist. The actual data will be checked later.
     annotations_path = "{}/{}".format(opts["prefix_path"], opts["annotations_path"])
     assert os.path.exists(annotations_path), \
@@ -335,7 +332,14 @@ def prune_hyperparameters(opts, arg_parser):
 
     if opts["scallop_e2e"] and opts["dfa_module"]["type"] != arg_parser.get_default("dfa_module").split(":")[0]:
         ok = False
-        print("Warning: dfa_module is ignored with scallop_e2e.")
+        opts["scallop_e2e"] = False  # Reverting to allow continuation in case of --abort_irrelevant = False.
+        print("Warning: dfa module is incompatible with --scallop_e2e=True. Ignoring the latter.")
+
+
+    if opts["scallop_e2e"] and opts["constraint_module"]["type"] != "scallop":
+        ok = False
+        opts["scallop_e2e"] = False # Reverting to allow continuation in case of --abort_irrelevant = False.
+        print("Warning: constraint module is incompatible with --scallop_e2e=True. Ignoring the latter.")
 
     return ok
 
