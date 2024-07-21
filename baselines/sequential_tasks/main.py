@@ -70,8 +70,9 @@ if __name__ == "__main__":
     opts = vars(arg_parser.parse_args())
 
     utils.preflight_checks(opts)
-    run_experiment = utils.prune_hyperparameters(opts, arg_parser) or not opts["abort_irrelevant"]
     experiment_name = utils.generate_name(opts, "cows")
+    run_experiment = utils.prune_hyperparameters(opts, arg_parser) or not opts["abort_irrelevant"]
+
 
     # Override experiment device if environment variable is set.
     if os.environ.get('DEVICE') is not None:
