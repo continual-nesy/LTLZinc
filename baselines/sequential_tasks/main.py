@@ -53,6 +53,7 @@ def run(opts, rng):
     test_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "test", transform=None)
 
     if opts["scallop_e2e"]:
+        #assert False, "REDO THIS EXPERIMENT LATER, TOO SLOW."
         model = ScallopE2E(opts, task_opts, classes)
     else:
         model = SequenceClassifier(opts, task_opts, classes)

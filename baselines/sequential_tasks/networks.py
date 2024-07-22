@@ -169,7 +169,7 @@ class ScallopE2E(SequenceClassifier):
 
         # Extend the Scallop program with the DFA.
         program += \
-"""type prev_state(u8)
+"""\ntype prev_state(u8)
 type next_state(u8)
 type transition(bound u8, u8)
 rel next_state(s1) = prev_state(s0), transition(s0, s1)

@@ -142,6 +142,9 @@ def get_arg_parser():
     arg_parser.add_argument('--abort_irrelevant',
                             help="Abort irrelevant combinations of hyper-parameters (useful when sweeping grid searches; default: True)",
                             type=ArgBoolean(), default=True)
+    arg_parser.add_argument('--verbose',
+                            help="Amount of output (0: no output, 1: epoch summary, 2: full; default: 1)",
+                            type=int, choices=[0, 1, 2], default=1)
     arg_parser.add_argument("--wandb_project", help="Use W&B, this is the project name (default: None)", type=str,
                             default=None)
 
@@ -180,7 +183,7 @@ def get_unhashable_opts():
     """
     return ["wandb_project", "save", "seed", "device", "annotations_path", "data_path", "eps", "neginf",
             "overfitting_threshold", "vanishing_threshold", "exploding_threshold", "std_threshold", "rnd_threshold",
-            "mp_threshold", "epoch_timeout"]
+            "mp_threshold", "epoch_timeout", "verbose"]
 
 def generate_name(opts, mnemonics=None):
     """

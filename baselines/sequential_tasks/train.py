@@ -6,8 +6,6 @@ import signal
 import time
 import torch.nn.functional as F
 
-
-
 from metrics import StdDev, grad_norm, MacroMetric, RandomMetric, MostProbableMetric
 
 def reduce_xor(x):
@@ -36,6 +34,11 @@ def fuzzy_loss(pred, labels):
 
 
 
+def sigint_handler(signum, frame):
+    raise KeyboardInterrupt()
+
+def timeout_handler(signum, frame):
+    raise TimeoutError()
 
 def train(net, classes, train_ds, val_ds, test_ds, opts):
     """
@@ -49,11 +52,10 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
     :return: Tuple: (history: list of metrics evaluated for each epoch, return_tags: set of events triggered during training).
     """
 
-    def timeout_handler(signum, frame):
-        raise TimeoutError()
-
     signal.signal(signal.SIGALRM,
                   timeout_handler)  # NOTE: this works only on UNIX systems! Windows does not have SIGALRM.
+    signal.signal(signal.SIGINT, sigint_handler) # Redirect SIGINT to KeyboardInterrupt.
+
 
     train_dl = DataLoader(train_ds, batch_size=opts["batch_size"], shuffle=True)
     val_dl = DataLoader(val_ds, batch_size=opts["batch_size"], shuffle=False)
@@ -73,8 +75,8 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
             p.register_hook(lambda grad: torch.clamp(grad, -opts["grad_clipping"], opts["grad_clipping"]))
 
     history = []
+    ok = True
     return_tags = set()
-    ok = True # True for successful completion and completion with warnings, False for errors.
 
     metrics = {
         s: {
@@ -102,7 +104,7 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
     metrics["train"]["avg_grad_norm"] = torcheval.metrics.Mean(device=opts["device"])
     metrics["train"]["std_grad_norm"] = StdDev(device=opts["device"])
 
-    for e in tqdm.trange(opts["pretraining_epochs"] + opts["epochs"], position=0, desc="epoch"):
+    for e in tqdm.trange(opts["pretraining_epochs"] + opts["epochs"], position=0, desc="epoch", disable=opts["verbose"] < 1):
         for v in metrics.values():
             for k2, v2 in v.items():
                 v2.reset()
@@ -120,8 +122,13 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
 
         try:
             start_time = time.time()
-            for batch in (bar := tqdm.tqdm(train_dl, position=1, desc="batch", leave=False, ncols=0)):
+            for batch in (bar := tqdm.tqdm(train_dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
                 loss, ok, step_tags = train_step(net, optimizer, batch, metrics, baselines, cls_size, e < opts["pretraining_epochs"], opts)
+
+                # If the timer has expired, abort training.
+                if not ok:
+                    break
+
 
                 return_tags.update(step_tags)
 
@@ -138,9 +145,14 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
                 net.eval()
                 for split, dl in {"val": val_dl, "test": test_dl}.items():
                     start_time = time.time()
-                    for batch in (bar := tqdm.tqdm(dl, position=1, desc="batch", leave=False, ncols=0)):
+                    for batch in (bar := tqdm.tqdm(dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
                         eval_step(net, batch, metrics, baselines, split, cls_size, opts)
                         times[split] = time.time() - start_time
+
+                        # If the timer has expired, abort evaluation.
+                        if not ok:
+                            break
+
                     bar.set_postfix_str(
                         "({}) Var_acc: {:.02f}, Con_acc: {:.02f}, Suc_acc: {:.02f}, Seq_acc: {:.02f}".format(
                             split,
@@ -174,10 +186,7 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
 
             history.append(epoch_stats)
 
-
-
-
-        # If the timer has expired, abort training.
+        # # If the timer has expired, abort training.
         except TimeoutError:
             return_tags.add("Timeout")
             ok = False
