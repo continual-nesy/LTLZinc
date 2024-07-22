@@ -147,11 +147,13 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
                     start_time = time.time()
                     for batch in (bar := tqdm.tqdm(dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
                         eval_step(net, batch, metrics, baselines, split, cls_size, opts)
-                        times[split] = time.time() - start_time
 
                         # If the timer has expired, abort evaluation.
                         if not ok:
                             break
+                    times[split] = time.time() - start_time
+
+
 
                     bar.set_postfix_str(
                         "({}) Var_acc: {:.02f}, Con_acc: {:.02f}, Suc_acc: {:.02f}, Seq_acc: {:.02f}".format(
