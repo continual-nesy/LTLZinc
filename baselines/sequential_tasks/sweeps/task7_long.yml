@@ -39,17 +39,19 @@ parameters:
   constraint_module:
     values:
       - mlp:8
-      - scallop:difftopkproofs:3:3
+      - scallop:diffminmaxprob:1:1
+      - scallop:diffaddmultprob:1:1
   dfa_module:
     values:
       - mlp:8
       - gru:8
-      - prob
+      #- prob
       - logprob
-      - scallop:difftopkproofs:3:3
+      - scallop:diffminmaxprob:1:1
+      - scallop:diffaddmultprob:1:1
   scallop_e2e:
     values:
-      - True
+      #- True
       - False
   train_on_irrelevant:
     values:

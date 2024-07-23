@@ -3,7 +3,7 @@ import pandas as pd
 from automaton import LTLAutomaton
 from sampler import StateSampler
 
-import tqdm
+import tqdm.auto as tqdm
 
 import sympy
 import os
@@ -64,9 +64,10 @@ class SequenceGenerator(AbstractGenerator):
     """
     Generator for sequence based tasks.
     """
-    def __init__(self, config, rng, positive_only=False):
+    def __init__(self, config, rng, positive_only=False, silent=True):
         super().__init__(config, rng)
         self.positive_only = positive_only
+        self.silent = silent
 
     def get_dataset(self, split, balance=False):
         """
@@ -85,7 +86,7 @@ class SequenceGenerator(AbstractGenerator):
         else:
             traces, transition_traces, labels, streams = self.dfa.generate_sequences(self.length, n, balance=balance)
 
-        for i in tqdm.trange(n, position=1, desc="seqs", leave=False):
+        for i in tqdm.trange(n, position=1, desc="seqs", leave=False, disable=self.silent):
             for j in range(len(traces[i])): # Always maximum length.
                 tmp = {k: None for k in self.props}
 
@@ -126,10 +127,11 @@ class TaskGenerator(AbstractGenerator):
     """
     Generator for incremental tasks. The automaton trace is always accepting and always truncated before the last non-absorbing state.
     """
-    def __init__(self, config, rng):
+    def __init__(self, config, rng, silent=True):
         super().__init__(config,rng)
 
         self.length = config["length"][0]
+        self.silent = silent
 
         self.curriculum, self.transition_trace, self.seq_streams = self.dfa.generate_accepting_sequence([self.length, self.length])
         self.curriculum = [task for task in self.curriculum if not isinstance(task, sympy.logic.boolalg.BooleanTrue)] # Automatically remove absorbing states.
@@ -146,9 +148,9 @@ class TaskGenerator(AbstractGenerator):
 
 
         seq = []
-        for i, task in tqdm.tqdm(enumerate(self.curriculum), position=1, desc="tasks", leave=False):
+        for i, task in tqdm.tqdm(enumerate(self.curriculum), position=1, desc="tasks", leave=False, disable=self.silent):
             assignments, props = self.sampler.solve(task, solutions=n)
-            for j in tqdm.trange(n, position=2, desc="seqs", leave=False):
+            for j in tqdm.trange(n, position=2, desc="seqs", leave=False, disable=self.silent):
                 tmp = {"task_id": i, "transition": self.transition_trace[i]}
                 tmp.update({k: None for k in self.props})
                 for k, v in assignments[j].items():

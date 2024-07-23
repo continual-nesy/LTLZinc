@@ -1,6 +1,6 @@
 mode: sequential
 
-length: [50, 100]
+length: [20, 30]
 
 splits:
   train: {path: "data/train", samples: 160}

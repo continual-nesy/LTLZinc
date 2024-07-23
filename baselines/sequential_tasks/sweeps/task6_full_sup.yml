@@ -1,13 +1,13 @@
 program: main.py
 method: grid
 project: ltlzinc
-name: task1_long
+name: task6_full_sup
 metric:
   name: val/label_acc
   goal: maximize
 parameters:
   task:
-    value: task1_long
+    value: task6
   device:
     value: cuda:0
   batch_size:
@@ -39,16 +39,16 @@ parameters:
   constraint_module:
     values:
       - mlp:8
-      - scallop:diffminmaxprob:1:1
-      - scallop:diffaddmultprob:1:1
+      - scallop:difftopkproofs:1:1
+      - scallop:diffminmaxprobs:1:1
   dfa_module:
     values:
       - mlp:8
       - gru:8
       - prob
       - logprob
-      - scallop:diffminmaxprob:1:1
-      - scallop:diffaddmultprob:1:1
+      - scallop:difftopkproofs:1:1
+      - scallop:diffminmaxprobs:1:1
   scallop_e2e:
     values:
       #- True
@@ -64,13 +64,13 @@ parameters:
       #- 10
   supervision_lambda:
     values:
-      - 0.1
-      #- 1.0
+      #- 0.1
+      - 1.0
   constraint_lambda:
     values:
       #- 0.0
-      - 0.1
-      #- 1.0
+      #- 0.1
+      - 1.0
   successor_lambda:
     values:
       #- 0.0
