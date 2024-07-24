@@ -40,7 +40,7 @@ parameters:
     values:
       - mlp:8
       - scallop:difftopkproofs:1:1
-      - scallop:diffminmaxprobs:1:1
+      - scallop:diffminmaxprob:1:1
   dfa_module:
     values:
       - mlp:8
@@ -48,7 +48,7 @@ parameters:
       - prob
       - logprob
       - scallop:difftopkproofs:1:1
-      - scallop:diffminmaxprobs:1:1
+      - scallop:diffminmaxprob:1:1
   scallop_e2e:
     values:
       #- True
