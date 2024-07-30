@@ -2,7 +2,6 @@ import torch
 from torch.utils.data import DataLoader
 import torcheval.metrics
 import tqdm
-import signal
 import time
 import torch.nn.functional as F
 
@@ -34,27 +33,22 @@ def fuzzy_loss(pred, labels):
 
 
 
-def sigint_handler(signum, frame):
-    raise KeyboardInterrupt()
-
-def timeout_handler(signum, frame):
-    raise TimeoutError()
-
 def train(net, classes, train_ds, val_ds, test_ds, opts):
     """
     Train the model on the provided datasets. If some events are triggered during training, it collects them on a set of flags.
+    Generator returning tuples in the form ("epoch", epoch_metrics, tags) for each epoch. Phase is a string in ["start", "epoch", "end"]
+    In order to correctly synchronize with the watchdog, it must yield two sentinels:
+    ("start", None, None) signals the end of the initialization phase and the start of proper training.
+    ("end", full_history, tags) signals the end of training, possibly providing additional tags (e.g., "Success" or "NaN loss").
     :param net: torch.nn.Module to train.
     :param classes: Nested dictionary of class values.
     :param train_ds: Train dataset.
     :param val_ds: Validation dataset.
     :param test_ds: Test dataset.
     :param opts: Dictionary of hyper-parameters.
-    :return: Tuple: (history: list of metrics evaluated for each epoch, return_tags: set of events triggered during training).
+    :return: Generator yielding tuples (phase, metrics evaluated for the current epoch, set of events triggered during the current epoch).
     """
 
-    signal.signal(signal.SIGALRM,
-                  timeout_handler)  # NOTE: this works only on UNIX systems! Windows does not have SIGALRM.
-    signal.signal(signal.SIGINT, sigint_handler) # Redirect SIGINT to KeyboardInterrupt.
 
 
     train_dl = DataLoader(train_ds, batch_size=opts["batch_size"], shuffle=True)
@@ -104,6 +98,9 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
     metrics["train"]["avg_grad_norm"] = torcheval.metrics.Mean(device=opts["device"])
     metrics["train"]["std_grad_norm"] = StdDev(device=opts["device"])
 
+    yield ("start", None, None) # Sentinel to start the watchdog heartbeat.
+
+
     for e in tqdm.trange(opts["pretraining_epochs"] + opts["epochs"], position=0, desc="epoch", disable=opts["verbose"] < 1):
         for v in metrics.values():
             for k2, v2 in v.items():
@@ -116,92 +113,68 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
 
         net.train()
 
-        # Set epoch timeout in minutes. This time includes both training and evaluation stages.
-        if opts["epoch_timeout"] > 0:
-            signal.alarm(opts["epoch_timeout"] * 60)
+        start_time = time.time()
+        for batch in (bar := tqdm.tqdm(train_dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
+            loss, ok, step_tags = train_step(net, optimizer, batch, metrics, baselines, cls_size, e < opts["pretraining_epochs"], opts)
 
-        try:
-            start_time = time.time()
-            for batch in (bar := tqdm.tqdm(train_dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
-                loss, ok, step_tags = train_step(net, optimizer, batch, metrics, baselines, cls_size, e < opts["pretraining_epochs"], opts)
-
-                # If the timer has expired, abort training.
-                if not ok:
-                    break
+            # If there was an error, abort training.
+            if not ok:
+                break
 
 
-                return_tags.update(step_tags)
+            return_tags.update(step_tags)
+
+            bar.set_postfix_str(
+                "{}Loss: {:.02f}, avg_Loss: {:.02f}, avg_dLoss: {:.02f}, std_dLoss: {:.02f}, Var_acc: {:.02f}, Con_acc: {:.02f}, Suc_acc: {:.02f}, Seq_acc: {:.02f}".format(
+                    ("[Pre-training] " if e < opts["pretraining_epochs"] else ""), loss,
+                    metrics["train"]["loss"].compute(), metrics["train"]["avg_grad_norm"].compute(),
+                    metrics["train"]["std_grad_norm"].compute(), metrics["train"]["label_acc"].compute(),
+                    metrics["train"]["const_acc"].compute(), metrics["train"]["succ_acc"].compute(),
+                    metrics["train"]["seq_acc"].compute()))
+
+        times = {"train": time.time() - start_time}
+        with torch.no_grad():
+            net.eval()
+            for split, dl in {"val": val_dl, "test": test_dl}.items():
+                start_time = time.time()
+                for batch in (bar := tqdm.tqdm(dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
+                    eval_step(net, batch, metrics, baselines, split, cls_size, opts)
+
+                times[split] = time.time() - start_time
 
                 bar.set_postfix_str(
-                    "{}Loss: {:.02f}, avg_Loss: {:.02f}, avg_dLoss: {:.02f}, std_dLoss: {:.02f}, Var_acc: {:.02f}, Con_acc: {:.02f}, Suc_acc: {:.02f}, Seq_acc: {:.02f}".format(
-                        ("[Pre-training] " if e < opts["pretraining_epochs"] else ""), loss,
-                        metrics["train"]["loss"].compute(), metrics["train"]["avg_grad_norm"].compute(),
-                        metrics["train"]["std_grad_norm"].compute(), metrics["train"]["label_acc"].compute(),
-                        metrics["train"]["const_acc"].compute(), metrics["train"]["succ_acc"].compute(),
-                        metrics["train"]["seq_acc"].compute()))
+                    "({}) Var_acc: {:.02f}, Con_acc: {:.02f}, Suc_acc: {:.02f}, Seq_acc: {:.02f}".format(
+                        split,
+                        metrics[split]["label_acc"].compute(),
+                        metrics[split]["const_acc"].compute(),
+                        metrics[split]["succ_acc"].compute(),
+                        metrics[split]["seq_acc"].compute()))
 
-            times = {"train": time.time() - start_time}
-            with torch.no_grad():
-                net.eval()
-                for split, dl in {"val": val_dl, "test": test_dl}.items():
-                    start_time = time.time()
-                    for batch in (bar := tqdm.tqdm(dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
-                        eval_step(net, batch, metrics, baselines, split, cls_size, opts)
+        epoch_stats = {}
+        for split in ["train", "val", "test"]:
+            epoch_stats["{}/time".format(split)] = times[split]
+            for k, v in metrics[split].items():
+                epoch_stats["{}/{}".format(split, k)] = v.compute().item()
 
-                        # If the timer has expired, abort evaluation.
-                        if not ok:
-                            break
-                    times[split] = time.time() - start_time
+        # "Generalization" metrics: train-test and train/test for every recorded metric.
+        for k in metrics["test"].keys():
+            epoch_stats["delta/{}".format(k)] = epoch_stats["train/{}".format(k)] - epoch_stats["test/{}".format(k)]
+            if epoch_stats["delta/{}".format(k)] > opts["overfitting_threshold"]:
+                return_tags.add("Overfitting {} (learning)".format(k))
 
+            if epoch_stats["test/{}".format(k)] != 0:
+                epoch_stats["ratio/{}".format(k)] = epoch_stats["train/{}".format(k)] / epoch_stats[
+                    "test/{}".format(k)]
+            else:
+                epoch_stats["ratio/{}".format(k)] = 0.0
 
+        # At the end of the first epoch, freeze random baseline metrics.
+        for k, v in baselines.items():
+            for v2 in v["rnd"].values():
+                v2.freeze()
 
-                    bar.set_postfix_str(
-                        "({}) Var_acc: {:.02f}, Con_acc: {:.02f}, Suc_acc: {:.02f}, Seq_acc: {:.02f}".format(
-                            split,
-                            metrics[split]["label_acc"].compute(),
-                            metrics[split]["const_acc"].compute(),
-                            metrics[split]["succ_acc"].compute(),
-                            metrics[split]["seq_acc"].compute()))
-
-            epoch_stats = {}
-            for split in ["train", "val", "test"]:
-                epoch_stats["{}/time".format(split)] = times[split]
-                for k, v in metrics[split].items():
-                    epoch_stats["{}/{}".format(split, k)] = v.compute().item()
-
-            # "Generalization" metrics: train-test and train/test for every recorded metric.
-            for k in metrics["test"].keys():
-                epoch_stats["delta/{}".format(k)] = epoch_stats["train/{}".format(k)] - epoch_stats["test/{}".format(k)]
-                if epoch_stats["delta/{}".format(k)] > opts["overfitting_threshold"]:
-                    return_tags.add("Overfitting {} (learning)".format(k))
-
-                if epoch_stats["test/{}".format(k)] != 0:
-                    epoch_stats["ratio/{}".format(k)] = epoch_stats["train/{}".format(k)] / epoch_stats[
-                        "test/{}".format(k)]
-                else:
-                    epoch_stats["ratio/{}".format(k)] = 0.0
-
-            # At the end of the first epoch, freeze random baseline metrics.
-            for k, v in baselines.items():
-                for v2 in v["rnd"].values():
-                    v2.freeze()
-
-            history.append(epoch_stats)
-
-        # # If the timer has expired, abort training.
-        except TimeoutError:
-            return_tags.add("Timeout")
-            ok = False
-
-        # If the user presses Ctrl+C, abort training. It does not work when W&B is running in sweep mode, because
-        # the wrapper will catch the signal before this exception.
-        except KeyboardInterrupt:
-            return_tags.add("User abort")
-            ok = False
-
-        # Whatever happens, disable the timer at the end.
-        finally:
-            signal.alarm(0)
+        history.append(epoch_stats)
+        yield ("epoch", epoch_stats, return_tags)
 
         if not ok:
             break
@@ -226,7 +199,7 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
 
         return_tags.add("Success")
 
-    return history, return_tags
+    yield ("end", history, return_tags) # Sentinel signaling the end of training.
 
 def train_step(net, optimizer, batch, metrics, baselines, cls_size, is_pretraining, opts):
     ok = True
@@ -313,7 +286,7 @@ def train_step(net, optimizer, batch, metrics, baselines, cls_size, is_pretraini
 
         if opts["constraint_lambda"] > 0.:
             for i, pred in enumerate(pp):
-                loss += (opts["constraint_lambda"] / len(pp)) * F.binary_cross_entropy(pred, tp[i])
+                loss += (opts["constraint_lambda"] / len(pp)) * F.binary_cross_entropy(pred, tp[i], reduction="mean")
 
         if opts["successor_lambda"] > 0.:
             loss += opts["successor_lambda"] * F.nll_loss(ps, ts, reduction="mean")

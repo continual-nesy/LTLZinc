@@ -7,6 +7,9 @@ import argparse
 import os
 import re
 
+import multiprocessing
+import queue
+
 
 from mnemonics import __mnemonic_names__
 
@@ -383,3 +386,65 @@ def sympy_to_scallop(constraint):
         out = constraint.replace("~", "not ").replace("&", ",").replace("|", " or ")
         out = re.sub(r"(p_\d+)", r"\1()", out)
         return out
+
+class Watchdog:
+    def __init__(self, function, heartbeat, *args, **kwargs):
+        self.queue = multiprocessing.Queue()
+        self.heartbeat = heartbeat
+
+        self.fn_proc = multiprocessing.Process(target=self._fn_wrapper(function), args=args, kwargs=kwargs, daemon=True)
+
+    def _fn_wrapper(self, function):
+        def f(*args, **kwargs):
+            for x in function(*args, **kwargs):
+                self.queue.put(x)
+        return f
+
+    def listen(self, timeout):
+        finished = False
+        time = 0
+        history = [] # Keep a local copy of the training history updated incrementally, to have some data to report in case of crashing/timeouts.
+        return_tags = set()
+        _, _, _ = self.queue.get(block=True)
+        while not finished:
+            if not self.fn_proc.is_alive():
+                return_tags.add("Crashed")
+                break
+
+            try:
+                phase, epoch_stats, tags = self.queue.get(block=True, timeout=self.heartbeat)
+                time = 0
+
+                if phase == "epoch":
+                    history.append(epoch_stats) # Update partial history.
+                else:  # Reached the end of the training loop.
+                    finished = True
+                    history = epoch_stats # Replace the entire history at the end of training, since it completed successfully.
+
+                return_tags.update(tags)
+
+            except queue.Empty:
+                pass # In case of heartbeat timeout, there is still a chance of being within the epoch timeout.
+            except KeyboardInterrupt:
+                return_tags.add("User abort")
+                break
+
+            time += self.heartbeat
+
+            if timeout > 0 and time >= timeout:
+                return_tags.add("Timeout") # If the epoch timeout has expired, give up.
+                break
+
+        return history, return_tags
+
+    def __enter__(self):
+        self.fn_proc.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.fn_proc.is_alive():
+            self.fn_proc.kill()
+            self.fn_proc.join()
+            self.fn_proc.close()
+
+        return True

@@ -4,7 +4,6 @@ import sys
 import yaml
 import torch
 import datetime
-
 import utils
 
 from networks import SequenceClassifier, ScallopE2E
@@ -30,7 +29,7 @@ def run(opts, rng):
     Perform an experiment.
     :param opts: Dictionary of hyper-parameters.
     :param rng: Seeded numpy.random.Generator.
-    :return: Tuple (return_tags: set of events encountered during training, model: the trained torch.nn.Module, history: list of metrics).
+    :return: Generator yielding tuples (dict of epoch statistics, set of epoch tags).
     """
 
     annotations_path = "{}/{}".format(opts["prefix_path"], opts["annotations_path"])
@@ -53,15 +52,29 @@ def run(opts, rng):
     test_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "test", transform=None)
 
     if opts["scallop_e2e"]:
-        #assert False, "REDO THIS EXPERIMENT LATER, TOO SLOW."
         model = ScallopE2E(opts, task_opts, classes)
     else:
         model = SequenceClassifier(opts, task_opts, classes)
 
-    history, return_tags = train(model, classes, train_ds, val_ds, test_ds, opts)
+    for x in train(model, classes, train_ds, val_ds, test_ds, opts):
+        yield x
 
-    return return_tags, model, history
+    if opts["save"]:
+        op = "{}/{}".format(opts["prefix_path"], opts["output_path"])
+        if not os.path.exists(op):
+            os.mkdir(op)
 
+        # Save model weights.
+        filename = "{}_{}".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), experiment_name)
+        torch.save(model.state_dict(), "{}/{}.pt".format(op, filename))
+
+        # Save hyper-parameters, to reconstruct the correct model.
+        with open("{}/{}.yml".format(op, filename), "w") as file:
+            yaml.safe_dump(opts, file)
+
+        # Save results.
+        with open("{}/{}_results.yml".format(op, filename), "w") as file:
+            yaml.safe_dump({"history": history, "tags": return_tags}, file)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
@@ -89,7 +102,11 @@ if __name__ == "__main__":
 
     if run_experiment:
         rng = utils.set_seed(opts["seed"])
-        return_tags, model, history = run(opts, rng)
+
+        # TODO: ADD PYSDD for dfa_module
+
+        with utils.Watchdog(run, 10, opts, rng) as wd:
+            history, return_tags = wd.listen(opts["epoch_timeout"] * 60)
 
         if wb is not None:
             wb.tags = sorted(return_tags)
@@ -101,24 +118,7 @@ if __name__ == "__main__":
             else:
                 wb.finish()
 
-
-        if opts["save"]:
-            op = "{}/{}".format(opts["prefix_path"], opts["output_path"])
-            if not os.path.exists(op):
-                os.mkdir(op)
-
-            # Save model weights.
-            filename = "{}_{}".format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"), experiment_name)
-            torch.save(model.state_dict(), "{}/{}.pt".format(op, filename))
-
-            # Save hyper-parameters, to reconstruct the correct model.
-            with open("{}/{}.yml".format(op, filename), "w") as file:
-                yaml.safe_dump(opts, file)
-
-            # Save results.
-            with open("{}/{}_results.yml".format(op, filename), "w") as file:
-                yaml.safe_dump({"history": history, "tags": return_tags}, file)
-        elif wb is None: # If neither W&B nor local saving is enabled, at least print results on screen.
+        else: # If W&B is not enabled, at least print results on screen.
             print({"history": history, "tags": return_tags})
 
     else:
