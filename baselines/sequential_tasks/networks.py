@@ -43,10 +43,8 @@ class SequenceClassifier(torch.nn.Module):
             self.dfa = DFAMLP(opts["dfa_module"]["hidden_n"], self.propositions, task_opts["automaton"])
         elif opts["dfa_module"]["type"] == "gru":
             self.dfa = DFAGRU(opts["dfa_module"]["hidden_n"], self.propositions, task_opts["automaton"])
-        elif opts["dfa_module"]["type"] == "prob":
-            self.dfa = DFAProb(task_opts["automaton"], semiring="prob", eps=opts["eps"], neginf=opts["neginf"])
-        elif opts["dfa_module"]["type"] == "logprob":
-            self.dfa = DFAProb(task_opts["automaton"], semiring="logprob", eps=opts["eps"], neginf=opts["neginf"])
+        elif opts["dfa_module"]["type"] == "fuzzy" or opts["dfa_module"]["type"] == "ddnnf":
+            self.dfa = DFAProb(task_opts["automaton"], type=opts["dfa_module"]["type"], semiring=opts["dfa_module"]["semiring"], eps=opts["eps"], neginf=opts["neginf"])
         elif opts["dfa_module"]["type"] == "scallop":
             self.dfa = DFAScallop(
                 self.propositions,

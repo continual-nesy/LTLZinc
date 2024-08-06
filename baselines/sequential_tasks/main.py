@@ -103,9 +103,7 @@ if __name__ == "__main__":
     if run_experiment:
         rng = utils.set_seed(opts["seed"])
 
-        # TODO: ADD PYSDD for dfa_module
-
-        with utils.Watchdog(run, 10, opts, rng) as wd:
+        with utils.Watchdog(run, opts["heartbeat"], opts, rng) as wd:
             history, return_tags = wd.listen(opts["epoch_timeout"] * 60)
 
         if wb is not None:

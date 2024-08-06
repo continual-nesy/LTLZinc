@@ -11,6 +11,7 @@ Baseline experiments for tasks 1-8 presented in our paper.
 
 ```
 Arpeggio==2.0.2
+nnf==0.4.1
 numpy==2.0.0
 pandas==2.2.2
 PyYAML==6.0.1
@@ -21,6 +22,16 @@ torcheval==0.0.7
 torchvision==0.18.1
 tqdm==4.66.1
 
+```
+
+You need to have the [DSHARP knowledge compiler](https://github.com/QuMuLab/dsharp) executable available from your `$PATH`.
+```commandline
+apt-get install libgmp-dev
+git clone https://github.com/QuMuLab/dsharp
+cd dsharp
+mv Makefile_gmp Makefile
+make
+mv dsharp $CONDA_PREFIX/bin/
 ```
 
 ## Usage
@@ -62,4 +73,5 @@ tqdm==4.66.1
 | --std_threshold         | float                                                                                    | 200.0           | Threshold triggering an high gradient standard deviation tag                                      |
 | --rnd_threshold         | float                                                                                    | 0.1             | Threshold triggering a random guessing tag                                                        |
 | --mp_threshold          | float                                                                                    | 0.1             | Threshold triggering a most probable guessing tag                                                 |
+| --heartbeat             | int                                                                                      | 10              | Heartbeat for the watchdog timer in seconds                                                       |
 

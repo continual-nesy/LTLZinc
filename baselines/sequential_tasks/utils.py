@@ -124,7 +124,7 @@ def get_arg_parser():
                             help="Constraint module in {'mlp:NUM_HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K'} (default: 'mlp:8')",
                             type=str, default="mlp:8")
     arg_parser.add_argument('--dfa_module',
-                            help="Automaton module in {'mlp:HIDDEN_NEURONS', 'gru:HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'prob', 'logprob'} (default: 'mlp:8')",
+                            help="Automaton module in {'mlp:HIDDEN_NEURONS', 'gru:HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'fuzzy:SEMIRING', 'ddnnf:SEMIRING'} (default: 'mlp:8')",
                             type=str, default="mlp:8")
     arg_parser.add_argument('--scallop_e2e',
                             help="Use an End-to-End Scallop program for constraints and automaton, instead of two disjoint programs (default: False)",
@@ -176,6 +176,9 @@ def get_arg_parser():
     arg_parser.add_argument('--mp_threshold',
                             help="Threshold triggering a most probable guessing tag (default: 0.1)",
                             type=ArgNumber(float, min_val=0), default=0.1)
+    arg_parser.add_argument('--heartbeat',
+                            help="Heartbeat for the watchdog timer in seconds (default: 10)",
+                            type=ArgNumber(int, min_val=0), default=10)
 
     return arg_parser
 
@@ -186,7 +189,7 @@ def get_unhashable_opts():
     """
     return ["wandb_project", "save", "seed", "device", "annotations_path", "data_path", "eps", "neginf",
             "overfitting_threshold", "vanishing_threshold", "exploding_threshold", "std_threshold", "rnd_threshold",
-            "mp_threshold", "epoch_timeout", "verbose"]
+            "mp_threshold", "heartbeat", "epoch_timeout", "verbose"]
 
 def generate_name(opts, mnemonics=None):
     """
@@ -280,14 +283,15 @@ def preflight_checks(opts):
         opts["constraint_module"] = {"type": "scallop", "provenance": cm[1], "train_k": int(cm[2], 10), "test_k": int(cm[3], 10)}
 
     dm = opts["dfa_module"].split(":")
-    assert dm[0] in ["mlp", "gru", "scallop", "prob", "logprob"], \
-        "Invalid automaton module, it must be one of {{'mlp:N', 'gru:N', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'prob', 'logprob'}}, found {}.".format(dm[0])
-    if dm[0] == "prob" or dm[0] == "logprob":
-        assert len(dm) == 1, "Probabilistic automata ({}) have no hyper-parameters, found {}.".format(dm[0], dm[1:])
-        opts["dfa_module"] = {"type": dm[0]}
+    assert dm[0] in ["mlp", "gru", "scallop", "fuzzy", "ddnnf"], \
+        "Invalid automaton module, it must be one of {{'mlp:N', 'gru:N', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'fuzzy:SEMIRING', 'ddnnf:SEMIRING'}}, found {}.".format(dm[0])
+    if dm[0] == "fuzzy" or dm[0] == "ddnnf":
+        assert len(dm) == 2, "Sum-product circuit automata ({}) take exactly 1 hyper-parameter (semiring), found {}.".format(dm[0], dm[1:])
+        assert dm[1] in ["prob", "logprob"], "The supported semirings for sum-product circuits are {{'prob', 'logprob'}}, found {}.".format(dm[1])
+        opts["dfa_module"] = {"type": dm[0], "semiring": dm[1]}
     elif dm[0] == "mlp" or dm[0] == "gru":
         assert len(dm) == 2, \
-            "Neural {} automaton takes exactly 1 hyper-parameters (number of hidden neurons for next state prediction), found {}.".format(dm[0], dm[1:])
+            "Neural {} automaton takes exactly 1 hyper-parameter (number of hidden neurons for next state prediction), found {}.".format(dm[0], dm[1:])
         assert int(dm[1], 10) > 1, \
             "The number of hidden neurons in the automaton module must be an integer >= 1, found {}.".format(dm[1])
         opts["dfa_module"] = {"type": dm[0], "hidden_n": int(dm[1], 10)}
