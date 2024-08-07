@@ -153,8 +153,14 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
         epoch_stats = {}
         for split in ["train", "val", "test"]:
             epoch_stats["{}/time".format(split)] = times[split]
+            tmp = 0.0
+            i = 0
             for k, v in metrics[split].items():
                 epoch_stats["{}/{}".format(split, k)] = v.compute().item()
+                if k.endswith("_acc"):
+                    tmp += epoch_stats["{}/{}".format(split, k)]
+                    i += 1
+            epoch_stats["{}/avg_acc".format(split)] = tmp / max(1, i)
 
         # "Generalization" metrics: train-test and train/test for every recorded metric.
         for k in metrics["test"].keys():
