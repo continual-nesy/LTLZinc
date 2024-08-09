@@ -1,5 +1,5 @@
 p_0:
-  constraint: increasing([A,B,C])
+  constraint: all_different([A,B,C])
   predicate: p
   streams:
     X:
@@ -16,7 +16,7 @@ p_0:
     B: Y
     C: Z
 p_1:
-  constraint: A < B
+  constraint: A < B + C
   predicate: q
   streams:
     X:
@@ -25,19 +25,10 @@ p_1:
     Y:
       direction: input
       name: y
-  substitutions:
-    A: X
-    B: Y
-p_2:
-  constraint: A < B
-  predicate: q
-  streams:
-    X:
-      direction: input
-      name: x
     Z:
       direction: input
       name: z
   substitutions:
     A: X
-    B: Z
+    B: Y
+    C: Z

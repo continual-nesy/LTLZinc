@@ -9,14 +9,13 @@ splits:
 
 
 minizinc_prefix: |
-  include "increasing.mzn";
+  include "all_different.mzn";
 
 predicates:
-  "p(A,B,C)": "increasing([A,B,C])"
-  "q(A,B)": "A < B"
+  "p(A,B,C)": "all_different([A,B,C])"
+  "q(A,B,C)": "A < B + C"
 
-#formula: "G p(X,Y,Z) & q(X,Y) U q(X,Z)"
-formula: "F p(X,Y,Z) & (q(X,Y) <-> WX q(X,Z)) U p(X,Y,Z)"
+formula: "F p(X,Y,Z) & q(X,Y,Z) U X p(X,Y,Z)"
 
 types:
   mnist_t:

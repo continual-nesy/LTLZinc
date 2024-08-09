@@ -16,7 +16,7 @@ p_0:
     B: Y
     C: Z
 p_1:
-  constraint: A - B = C
+  constraint: A + B = 2 * C
   predicate: q
   streams:
     X:

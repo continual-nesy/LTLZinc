@@ -3,6 +3,6 @@ type p_0(), p_1()
 
 
 rel p_0() = var_x(x), var_y(y), out_z(z), z == x + y
-rel p_1() = var_x(x), var_y(y), out_z(z), z == x - y
+rel p_1() = var_x(x), var_y(y), out_z(z), x + y == 2 * z
 
 

@@ -1,16 +1,4 @@
 test:
-  T:
-  - sandal
-  - shirt
-  - sneaker
-  - top
-  - trouser
-  U:
-  - sandal
-  - shirt
-  - sneaker
-  - top
-  - trouser
   V:
   - sandal
   - shirt
@@ -52,18 +40,6 @@ test:
   - top
   - trouser
 train:
-  T:
-  - sandal
-  - shirt
-  - sneaker
-  - top
-  - trouser
-  U:
-  - sandal
-  - shirt
-  - sneaker
-  - top
-  - trouser
   V:
   - sandal
   - shirt
@@ -105,18 +81,6 @@ train:
   - top
   - trouser
 val:
-  T:
-  - sandal
-  - shirt
-  - sneaker
-  - top
-  - trouser
-  U:
-  - sandal
-  - shirt
-  - sneaker
-  - top
-  - trouser
   V:
   - sandal
   - shirt

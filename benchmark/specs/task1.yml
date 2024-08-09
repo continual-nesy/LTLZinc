@@ -12,10 +12,9 @@ minizinc_prefix: |
 
 predicates:
   "p(A,B)": "A < B"
-  "q(A,B,C,D,E)": "(all_equal([A,B,C,D,E]))"
+  "q(A,B,C)": "(all_equal([A,B,C]))"
 
-#formula: "G (p(Y,Z) -> F G q(T,U,V,W,X) )"
-formula: "G (p(Y,Z) <-> X X X q(T,U,V,W,X) ) "
+formula: "G (p(Y,Z) <-> X X q(V,W,X) ) "
 
 types:
   fmnist_t:
@@ -40,15 +39,11 @@ types:
 domains:
   Y: fmnist_t
   Z: fmnist_t
-  T: fmnist_5_t
-  U: fmnist_5_t
   V: fmnist_5_t
   W: fmnist_5_t
   X: fmnist_5_t
 
 streams:
-  T: t
-  U: u
   V: v
   W: w
   X: x

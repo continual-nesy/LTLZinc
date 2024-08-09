@@ -9,32 +9,57 @@ splits:
 
 
 minizinc_prefix: |
-  include "increasing.mzn";
+  include "all_different.mzn";
 
 predicates:
-  "p(A,B,C)": "increasing([A,B,C])"
-  "q(A,B)": "A < B"
+  "p(A,B,C)": "all_different([A,B,C])"
+  "q(A,B,C)": "A < B + C"
 
-formula: "F p(X,Y,Z) & (q(X,Y) <-> WX q(X,Z)) U p(X,Y,Z)"
+formula: "F p(X,Y,Z) & q(X,Y,Z) U X p(X,Y,Z)"
 
 types:
-  cifar_t:
-    airplane: "cifar10/airplane"
-    automobile: "cifar10/automobile"
-    bird: "cifar10/bird"
-    cat: "cifar10/cat"
-    deer: "cifar10/deer"
-    dog: "cifar10/dog"
-    frog: "cifar10/frog"
-    horse: "cifar10/horse"
-    ship: "cifar10/ship"
-    truck: "cifar10/truck"
+#  cifar_t:
+#    airplane: "cifar10/airplane"
+#    automobile: "cifar10/automobile"
+#    bird: "cifar10/bird"
+#    cat: "cifar10/cat"
+#    deer: "cifar10/deer"
+#    dog: "cifar10/dog"
+#    frog: "cifar10/frog"
+#    horse: "cifar10/horse"
+#    ship: "cifar10/ship"
+#    truck: "cifar10/truck"
+  fmnist_t:
+    bag: "fmnist/bag"
+    boot: "fmnist/boot"
+    coat: "fmnist/coat"
+    dress: "fmnist/dress"
+    pullover: "fmnist/pullover"
+    sandal: "fmnist/sandal"
+    shirt: "fmnist/shirt"
+    sneaker: "fmnist/sneaker"
+    top: "fmnist/top"
+    trouser: "fmnist/trouser"
+  mnist_t:
+    bag: "mnist/0"
+    boot: "mnist/1"
+    coat: "mnist/2"
+    dress: "mnist/3"
+    pullover: "mnist/4"
+    sandal: "mnist/5"
+    shirt: "mnist/6"
+    sneaker: "mnist/7"
+    top: "mnist/8"
+    trouser: "mnist/9"
 
 
 domains:
-  X: cifar_t
-  Y: cifar_t
-  Z: cifar_t
+#  X: cifar_t
+#  Y: cifar_t
+#  Z: cifar_t
+  X: mnist_t
+  Y: fmnist_t
+  Z: fmnist_t
 
 streams:
   X: x
