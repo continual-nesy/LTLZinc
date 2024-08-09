@@ -118,8 +118,8 @@ def get_arg_parser():
 
     # Model parameters.
     arg_parser.add_argument('--backbone_module',
-                            help="Perceptual backbone in {'independent', 'dataset', 'domain'} (default: 'domain')",
-                            type=str, default="domain", choices=["independent", "dataset", "domain"])
+                            help="Perceptual backbone in {'independent', 'dataset'} (default: 'dataset')",
+                            type=str, default="dataset", choices=["independent", "dataset"])
     arg_parser.add_argument('--constraint_module',
                             help="Constraint module in {'mlp:NUM_HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K'} (default: 'mlp:8')",
                             type=str, default="mlp:8")

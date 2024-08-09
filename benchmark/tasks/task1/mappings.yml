@@ -1,6 +1,6 @@
 p_0:
   constraint: A < B
-  predicate: Z
+  predicate: p
   streams:
     Y:
       direction: input
@@ -13,22 +13,22 @@ p_0:
     B: Z
 p_1:
   constraint: (all_equal([A,B,C,D,E]))
-  predicate: X
+  predicate: q
   streams:
     T:
-      direction: output
+      direction: input
       name: t
     U:
-      direction: output
+      direction: input
       name: u
     V:
-      direction: output
+      direction: input
       name: v
     W:
-      direction: output
+      direction: input
       name: w
     X:
-      direction: output
+      direction: input
       name: x
   substitutions:
     A: T

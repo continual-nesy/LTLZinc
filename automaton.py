@@ -7,8 +7,8 @@ class LTLAutomaton:
     Automaton class. It builds a deterministic finite state automaton from an LTLf formula and samples traces from it,
     while keeping track of data streams.
     """
-    def __init__(self, ltl, pred_dict, streams, avoid_absorbing, truncate_on_absorbing, rng, patience):
-        self.avoid_absorbing = avoid_absorbing
+    def __init__(self, ltl, pred_dict, streams, avoid_policy, truncate_on_absorbing, rng, patience):
+        self.avoid_policy = avoid_policy
         self.rng = rng
         self.patience = patience
         self.streams = streams
@@ -67,7 +67,7 @@ class LTLAutomaton:
 
                     propositional_name = "p_{}".format(i)
                     self.mapping[propositional_name] = {
-                        "predicate": k, "substitutions": subs,
+                        "predicate": pred_name, "substitutions": subs,
                         "streams": chans,
                         "constraint": v["constraint"]
                     }
@@ -122,29 +122,32 @@ class LTLAutomaton:
 
     # Compute the sampling probability for absorbing states.
     def _get_probs(self, t, state_type):
-        if self.avoid_absorbing[state_type][0] == "linear":
-            return min(1.0, t * self.avoid_absorbing[state_type][1])
+        if self.avoid_policy[state_type][0] == "linear":
+            return min(1.0, t * self.avoid_policy[state_type][1])
         else:
-            return 1. - np.exp(-t * self.avoid_absorbing[state_type][1])
+            return 1. - np.exp(-t * self.avoid_policy[state_type][1])
 
-    def _identify_absorbing_states(self, cur_state):
+    def _identify_avoidable_states(self, cur_state):
         """
         Perform look-ahead search for absorbing next states.
         :param cur_state: The current state.
-        :return: Tuple (set of next states which are absorbing and accepting, set of next states which are absorbing and non-accepting).
+        :return: Tuple (set of next states which are absorbing and accepting, set of next states which are absorbing and non-accepting, set of next states which are self-loops).
         """
         next_acc_abs = set()
         next_rej_abs = set()
+        next_loops = set()
 
         for next_state in self.dfa._transition_function[cur_state].keys():
+            if cur_state == next_state:
+                next_loops.add(next_state)
             for next_next, formula in self.dfa._transition_function[next_state].items(): # The transition of the successor.
-                if str(formula) == "True":
+                if str(formula) == "True" and next_next == next_state: # If it is both a self-loop and has true guard, it is absorbing.
                     if next_next in self.dfa.accepting_states:
                         next_acc_abs.add(next_state)
                     else:
                         next_rej_abs.add(next_state)
 
-        return next_acc_abs, next_rej_abs
+        return next_acc_abs, next_rej_abs, next_loops
 
     def generate_sequence(self, steps):
         """
@@ -164,8 +167,8 @@ class LTLAutomaton:
         abs_rej = 0 # increased every time an absorbing rejecting state is a possible next state
 
         for i in range(seq_len):
-            next_acc_abs, next_rej_abs = self._identify_absorbing_states(cur_state)
-            next_non_abs = {s for s in self.dfa._transition_function[cur_state].keys() if s not in next_acc_abs and s not in next_rej_abs}
+            next_acc_abs, next_rej_abs, next_self_loops = self._identify_avoidable_states(cur_state)
+            next_non_abs = {s for s in self.dfa._transition_function[cur_state].keys() if s not in next_acc_abs and s not in next_rej_abs and s not in next_self_loops}
 
             if len(next_acc_abs) > 0:
                 abs_acc += 1
@@ -174,17 +177,22 @@ class LTLAutomaton:
 
             next_states = []
             probs = []
-            acc_mass = self._get_probs(abs_acc, "accepting")
+            acc_mass = self._get_probs(abs_acc, "absorbing_accepting")
 
             # Biases next state selection, based on absorbing states avoidance policy.
             for s in sorted(next_acc_abs):
                 next_states.append(s)
                 probs.append(acc_mass)
 
-            rej_mass = self._get_probs(abs_rej, "rejecting")
+            rej_mass = self._get_probs(abs_rej, "absorbing_rejecting")
             for s in sorted(next_rej_abs):
                 next_states.append(s)
                 probs.append(rej_mass)
+
+            loop_mass = self._get_probs(abs_rej, "self_loops")
+            for s in sorted(next_self_loops):
+                next_states.append(s)
+                probs.append(loop_mass)
 
             for s in sorted(next_non_abs):
                 next_states.append(s)

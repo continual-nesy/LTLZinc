@@ -1,6 +1,7 @@
-type var_x(u8), out_y(u8), var_z(u8)
-type p_0(), p_1()
+type var_w(u8), var_x(u8), var_y(u8), var_z(u8)
+type p_0()
 
-rel p_0() = var_x(x), out_y(y), y == (x + 1) % 10
-rel p_1() = var_x(x), out_y(y), var_z(z), z == (x + y) % 10
+
+rel p_0() = var_w(w), var_x(x), var_y(y), var_z(z), w + x == y + z
+
 

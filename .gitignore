@@ -9,3 +9,4 @@ baselines/sequential_tasks/*.bak
 baselines/incremental_tasks
 debug.yml
 generate_readme_stub.py
+/benchmark_old/

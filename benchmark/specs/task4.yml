@@ -7,48 +7,50 @@ splits:
   val:   {path: "data/train", samples: 20}
   test:  {path: "data/test", samples: 20}
 
+
 minizinc_prefix: |
-  include "strictly_decreasing.mzn";
-  include "strictly_increasing.mzn";
+  include "increasing.mzn";
 
 predicates:
-  "p(A,B,C)": "strictly_decreasing([A,B,C])"
-  "q(A,B,C)": "strictly_increasing([A,B,C])"
+  "p(A,B,C)": "increasing([A,B,C])"
+  "q(A,B)": "A < B"
 
-formula: "G (p(X,Y,Z) <-> ! q(X,Y,Z)) & ((G (p(X,Y,Z) <-> X q(X,Y,Z)) ) | (G (q(X,Y,Z) <-> X p(X,Y,Z)) ))"
-
+formula: "F p(X,Y,Z) & (q(X,Y) <-> WX q(X,Z)) U p(X,Y,Z)"
 
 types:
-  mnist_t:
-    0: "mnist/0"
-    1: "mnist/1"
-    2: "mnist/2"
-    3: "mnist/3"
-    4: "mnist/4"
-    5: "mnist/5"
-    6: "mnist/6"
-    7: "mnist/7"
-    8: "mnist/8"
-    9: "mnist/9"
+  cifar_t:
+    airplane: "cifar10/airplane"
+    automobile: "cifar10/automobile"
+    bird: "cifar10/bird"
+    cat: "cifar10/cat"
+    deer: "cifar10/deer"
+    dog: "cifar10/dog"
+    frog: "cifar10/frog"
+    horse: "cifar10/horse"
+    ship: "cifar10/ship"
+    truck: "cifar10/truck"
+
 
 domains:
-  X: mnist_t
-  Y: mnist_t
-  Z: mnist_t
+  X: cifar_t
+  Y: cifar_t
+  Z: cifar_t
 
 streams:
-  X: +x
-  Y: -y
-  Z: +z
+  X: x
+  Y: y
+  Z: z
 
-
-avoid_absorbing_state:
-  accepting: { "exponential": 1e-3 }
-  rejecting: { "exponential": 1e-3 }
+avoid_states:
+  absorbing_accepting: { "linear": 0.01 }
+  absorbing_rejecting: { "linear": 0.01 }
+  self_loops: { "linear": 0.1 }
 
 truncate_on_absorbing:
-  accepting: True
-  rejecting: True
+  accepting: False
+  rejecting: False
 
 seed: 12345
 patience: 1000
+
+

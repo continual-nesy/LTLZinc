@@ -1,99 +1,159 @@
 test:
+  T:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  U:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  V:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  W:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
   X:
-  - 0
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
   Y:
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
   Z:
-  - 0
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
 train:
+  T:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  U:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  V:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  W:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
   X:
-  - 0
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
   Y:
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
   Z:
-  - 0
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
 val:
+  T:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  U:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  V:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  W:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
   X:
-  - 0
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
   Y:
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
   Z:
-  - 0
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  - 6
-  - 7
-  - 8
-  - 9
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser

@@ -1,78 +1,57 @@
-mode: sequential
+mode: incremental
 
-length: [5, 10]
+length: 3
 
 splits:
-  train: {path: "data/train", samples: 160}
-  val:   {path: "data/train", samples: 20}
-  test:  {path: "data/test", samples: 20}
+  train: {path: "data/train", samples: 8}
+  val:   {path: "data/train", samples: 1}
+  test:  {path: "data/test", samples: 1}
 
-minizinc_prefix: |
-  include "all_equal.mzn";
+minizinc_prefix: ""
 
 predicates:
-  "p(A,B)": "A < B"
-  "q(A,B,C,D,E)": "(all_equal([A,B,C,D,E]))"
+  "p(A,B, C)": "A + B = C"
 
-formula: "G (p(Y,Z) -> F G q(T,U,V,W,X) )"
+formula: "p(T,U,Z) & X p(V,W,Z) & X X p(X,Y,Z)"
 
 types:
-  fmnist_t:
-    bag: "fmnist/bag"
-    boot: "fmnist/boot"
-    coat: "fmnist/coat"
-    dress: "fmnist/dress"
-    pullover: "fmnist/pullover"
-    sandal: "fmnist/sandal"
-    shirt: "fmnist/shirt"
-    sneaker: "fmnist/sneaker"
-    top: "fmnist/top"
-    trouser: "fmnist/trouser"
-
-  fmnist_5_t:
-    sandal: "fmnist/sandal"
-    shirt: "fmnist/shirt"
-    sneaker: "fmnist/sneaker"
-    top: "fmnist/top"
-    trouser: "fmnist/trouser"
-
-  cifar_t:
-    airplane: "cifar10/airplane"
-    automobile: "cifar10/automobile"
-    bird: "cifar10/bird"
-    cat: "cifar10/cat"
-    deer: "cifar10/deer"
-    #dog: "cifar10/dog"
-    #frog: "cifar10/frog"
-    #horse: "cifar10/horse"
-    #ship: "cifar10/ship"
-    #truck: "cifar10/truck"
+  mnist1_t:
+    0: "mnist/0"
+    1: "mnist/1"
+    2: "mnist/2"
+  mnist2_t:
+    3: "mnist/3"
+    4: "mnist/4"
+    5: "mnist/5"
+  mnist3_t:
+    0: "mnist/0"
+    1: "mnist/1"
+    2: "mnist/2"
+    3: "mnist/3"
+    4: "mnist/4"
+    5: "mnist/5"
+    6: "mnist/6"
+    7: "mnist/7"
+    8: "mnist/8"
+    9: "mnist/9"
 
 domains:
-  Y: fmnist_t
-  Z: {"default": fmnist_5_t, "test": fmnist_t}
-  T: cifar_t
-  U: cifar_t
-  V: cifar_t
-  W: cifar_t
-  X: cifar_t
+  T: mnist1_t
+  U: mnist1_t
+  V: mnist2_t
+  W: mnist2_t
+  X: mnist3_t
+  Y: mnist3_t
+  Z: mnist3_t
 
 streams:
-  T: -t
-  U: -u
-  V: -v
-  W: -w
-  X: -x
-  Y: y
-  Z: z
-
-avoid_absorbing_state:
-  accepting: { "exponential": 1e-3 }
-  rejecting: { "exponential": 1e-3 }
-
-truncate_on_absorbing:
-  accepting: True
-  rejecting: False
+  T: +x
+  U: +y
+  V: +x
+  W: +y
+  X: +x
+  Y: +y
+  Z: -z
 
 seed: 12345
 patience: 1000

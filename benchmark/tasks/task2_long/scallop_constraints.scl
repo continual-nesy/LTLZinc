@@ -1,6 +1,0 @@
-type var_x(u8), var_y(u8), out_z(u8)
-
-rel p_2() = var_x(x), var_y(y), out_z(z), z == x / y
-rel p_1() =var_x(x), var_y(y), out_z(z), z == x - y
-rel p_0() = var_x(x), var_y(y), out_z(z), x >= y, y >= z
-

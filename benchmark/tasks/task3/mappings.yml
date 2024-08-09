@@ -1,29 +1,43 @@
 p_0:
-  constraint: all_different([A,B,C,D,E,F])
-  predicate: Z
+  constraint: increasing([A,B,C])
+  predicate: p
   streams:
-    U:
-      direction: input
-      name: u
-    V:
-      direction: input
-      name: v
-    W:
-      direction: input
-      name: w
     X:
-      direction: output
+      direction: input
       name: x
     Y:
-      direction: output
+      direction: input
       name: y
     Z:
-      direction: output
+      direction: input
       name: z
   substitutions:
-    A: U
-    B: V
-    C: W
-    D: X
-    E: Y
-    F: Z
+    A: X
+    B: Y
+    C: Z
+p_1:
+  constraint: A < B
+  predicate: q
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+  substitutions:
+    A: X
+    B: Y
+p_2:
+  constraint: A < B
+  predicate: q
+  streams:
+    X:
+      direction: input
+      name: x
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    A: X
+    B: Z

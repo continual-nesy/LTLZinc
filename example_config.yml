@@ -106,15 +106,17 @@ streams: # In this example there is a 1-to-1 mapping between variables and strea
 # NOTE: The generator will raise an error if there is stream ambiguity at some time-step (e.g. if it encounters a state which depends both on the value of X and Z).
 
 
-# [Optional] Perform look-ahead and try to avoid being trapped into an absorbing state.
-#   If defined, both strategies for accepting and rejecting absorbing states must be defined.
+# [Optional] Perform look-ahead and try to avoid being trapped into absorbing states (accepting or rejecting), and self loops.
+#   If defined, all three strategies must be defined.
 #   False: next state will be uniformly sampled.
 #   True: next state will be uniformly sampled, after removing every accepting/rejecting absorbing state from the candidates.
 #   linear: rate: let t be the number of times an accepting/rejecting absorbing state has been a potential successor so far, then sample absorbing states with probability rate * t, and every other state uniformly.
 #   exponential: rate: like the linear case, but absorbing states are sampled with 1 - e^(-rate * t) probability.
-avoid_absorbing_state:
-  accepting: False
-  rejecting: { "exponential": 1e-3 }
+avoid_states:
+  absorbing_accepting: False
+  absorbing_rejecting: { "exponential": 1e-3 }
+  self_loops: { "linear": 1e-1 }
+
 
 # [Optional] Upon entering an absorbing state, prematurely truncate the sequence (e.g., because new samples would be irrelevant for learning purposes).
 truncate_on_absorbing:

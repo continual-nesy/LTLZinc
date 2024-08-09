@@ -1,5 +1,0 @@
-sample_id,task_id,seq_id,transition,img_x,img_y,img_z,var_x,var_y,var_z,p_0,p_1,p_2,p_3
-0,0,0,0->4,data/train/mnist/5/54619.png,data/train/mnist/0/44675.png,data/train/mnist/5/39803.png,5,0,5,1,(1),(0),(0)
-1,1,0,4->3,data/train/mnist/6/46682.png,data/train/mnist/6/35768.png,data/train/mnist/0/6406.png,6,6,0,(0),1,(0),(1)
-2,2,0,3->2,data/train/mnist/4/32993.png,data/train/mnist/1/44648.png,data/train/mnist/4/26105.png,4,1,4,(0),(0),1,(0)
-3,3,0,2->5,data/train/mnist/0/13799.png,data/train/mnist/2/24433.png,data/train/mnist/0/4325.png,0,2,0,(0),(0),(1),1

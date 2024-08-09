@@ -37,42 +37,29 @@ class FiveFMNIST(torch.nn.Module):  # Used for parameter sharing while preventin
         self.mnistnet = mnistnet
 
     def forward(self, x):
-        return self.mnistnet(x)[:, :5]
+        return self.mnistnet(x)[:, :5] # Simply return the first five neurons.
 
 backbone_factory = {}
 
 backbone_factory["independent"] = { # Every input stream is processed by a different neural network.
-    "task1": lambda: {"out_t": SmallNet(5), "out_u": SmallNet(5), "out_v": SmallNet(5), "out_w": SmallNet(5), "out_x": SmallNet(5), "var_y": SmallNet(10), "var_z": SmallNet(10)},
-    "task2": lambda: {"var_x": SmallNet(10), "var_y": SmallNet(9), "out_z": SmallNet(10)},
-    "task3": {"var_u": SmallNet(10), "var_v": SmallNet(10), "var_w": SmallNet(10), "out_x": SmallNet(10), "out_y": SmallNet(10), "out_z": SmallNet(10)},
-    "task4": lambda: {"var_x": SmallNet(10), "out_y": SmallNet(10), "var_z": SmallNet(10)},
-    "task5": lambda: {"var_x": SmallNet(10), "out_y": SmallNet(10), "var_z": SmallNet(10)},
+    "task1": lambda: {"var_t": SmallNet(5), "var_u": SmallNet(5), "var_v": SmallNet(5), "var_w": SmallNet(5), "var_x": SmallNet(5), "var_y": SmallNet(10), "var_z": SmallNet(10)},
+    "task2": lambda: {"var_t": SmallNet(5), "var_u": SmallNet(5), "var_v": SmallNet(5), "var_w": SmallNet(5), "var_x": SmallNet(5), "var_y": SmallNet(10), "var_z": SmallNet(10)},
+    "task3": lambda: {"var_x": SmallNet(10), "var_y": SmallNet(10), "var_z": SmallNet(10)},
+    "task4": lambda: {"var_x": SmallNet(10), "var_y": SmallNet(10), "var_z": SmallNet(10)},
+    "task5": lambda: {"var_w": SmallNet(10), "var_x": SmallNet(10), "var_y": SmallNet(10), "var_z": SmallNet(10)},
     "task6": lambda: {"var_x": SmallNet(10), "var_y": SmallNet(10), "out_z": SmallNet(10)},
-    "task7": lambda: {"out_t": SmallNet(5), "out_u": SmallNet(5), "out_v": SmallNet(5), "out_w": SmallNet(5), "out_x": SmallNet(5), "var_y": SmallNet(10), "var_z": SmallNet(10)},
-    "task8": lambda: {"var_x": SmallNet(10), "var_y": SmallNet(10), "out_z": SmallNet(10)},
 }
 
 backbone_factory["dataset"] = { # Input streams processing the same dataset, with the same values, are processed by the same neural network.
-    "task1": lambda: {"var_y": (fmnist := SmallNet(10)), "var_z": fmnist, "out_t": (small_fmnist := FiveFMNIST(fmnist)), "out_u": small_fmnist, "out_v": small_fmnist, "out_w": small_fmnist, "out_x": small_fmnist},
-    "task2": lambda: {"var_x": (net := SmallNet(10)), "var_y": NonZeroMNIST(net), "out_z": net}, # Exclude var_y = 0 from domain, but still share the same network.
-    "task3": lambda: {"var_u": (net := SmallNet(10)), "var_v": net, "var_w": net, "out_x": net, "out_y": net, "out_z": net},
-    "task4": lambda: {"var_x": (net := SmallNet(10)), "out_y": net, "var_z": net},
-    "task5": lambda: {"var_x": (net := SmallNet(10)), "out_y": net, "var_z": net},
+    "task1": lambda: {"var_y": (fmnist := SmallNet(10)), "var_z": fmnist, "var_t": (small_fmnist := FiveFMNIST(fmnist)), "var_u": small_fmnist, "var_v": small_fmnist, "var_w": small_fmnist, "var_x": small_fmnist},
+    "task2": lambda: {"var_y": (fmnist := SmallNet(10)), "var_z": fmnist, "var_t": (small_fmnist := FiveFMNIST(fmnist)), "var_u": small_fmnist, "var_v": small_fmnist, "var_w": small_fmnist, "var_x": small_fmnist},
+    "task3": lambda: {"var_x": (net := SmallNet(10)), "var_y": net, "var_z": net},
+    "task4": lambda: {"var_x": (net := SmallNet(10)), "var_y": net, "var_z": net},
+    "task5": lambda: {"var_w": (net := SmallNet(10)), "var_x": net, "var_y": net, "var_z": net},
     "task6": lambda: {"var_x": (net := SmallNet(10)), "var_y": net, "out_z": net},
-    "task7": lambda: {"out_t": (cifar := SmallNet(5)), "out_u": cifar, "out_v": cifar, "out_w": cifar, "out_x": cifar, "var_y": (fmnist := SmallNet(10)), "var_z": fmnist}, # Same as task 1 but cross-domain (disjoint semantics)
-    "task8": lambda: {"var_x": (net := SmallNet(10)), "var_y": net, "out_z": SmallNet(10)} # Same as task6, but cross-domain (shared semantics): MNIST 0-9 (x,y) and SVHN 0-9 (z) use different nets.
 }
 
-backbone_factory["domain"] = { # Input streams sharing domain values are processed by the same neural network.
-    "task1": backbone_factory["dataset"]["task1"], # Since each domain corresponds to a dataset, copy ["dataset"]
-    "task2": backbone_factory["dataset"]["task2"],
-    "task3": backbone_factory["dataset"]["task3"],
-    "task4": backbone_factory["dataset"]["task4"],
-    "task5": backbone_factory["dataset"]["task5"],
-    "task6": backbone_factory["dataset"]["task6"],
-    "task7": backbone_factory["dataset"]["task6"],
-    "task8": lambda: {"var_x": (net := SmallNet(10)), "var_y": net, "out_z": net} # MNIST 0-9 (x,y) and SVHN 0-9 (z) use the same net.
-}
+# For domain adaptation tasks, it may be useful to define a ["domain"] entry, where input streams processing different datasets, but with the same labels are processed by the same neural network.
 
 # Duplicating entries for the long-sequence variants of each task.
 for v in backbone_factory.values():

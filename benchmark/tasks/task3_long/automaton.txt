@@ -1,8 +1,0 @@
-States: {0, 1}
-Initial state: 0
-Accepting states: {0}
-
-Transitions:
-[0->0]	p_0
-[0->1]	~p_0
-[1->1]	True

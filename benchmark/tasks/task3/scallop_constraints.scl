@@ -1,4 +1,8 @@
-type var_u(u8), var_v(u8), var_w(u8), out_x(u8), out_y(u8), out_z(u8)
-type p_0()
+type var_x(u8), var_y(u8), var_z(u8)
+type p_0(), p_1(), p_2()
 
-rel p_0() = var_u(u), var_v(v), var_w(w), out_x(x), out_y(y), out_z(z), u != v, u != w, u != x, u != y, u != z, v != w, v != x, v != y, v != z, w != x, w != y, w != z, x != y, x != z, y != z
+
+rel p_0() = var_x(x), var_y(y), var_z(z), x <= y, y <= z
+rel p_1() = var_x(x), var_y(y), x < y
+rel p_2() = var_x(x), var_z(z), x <= z
+

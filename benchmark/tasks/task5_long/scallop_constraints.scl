@@ -1,6 +1,0 @@
-type var_x(u8), out_y(u8), var_z(u8)
-type p_0(), p_1()
-
-rel p_0() = var_x(x), out_y(y), y == (x + 1) % 10
-rel p_1() = var_x(x), out_y(y), var_z(z), z == (x + y) % 10
-

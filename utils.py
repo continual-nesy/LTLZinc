@@ -46,8 +46,8 @@ def parse_config(filename):
     if "minizinc_prefix" not in config:
         config["minizinc_prefix"] = ""
 
-    if "avoid_absorbing_state" not in config:
-        config["avoid_absorbing_state"] = {"accepting": False, "rejecting": False}
+    if "avoid_states" not in config:
+        config["avoid_states"] = {"absorbing_accepting": False, "absorbing_rejecting": False, "self_loops": False}
 
     if "truncate_on_absorbing" not in config:
         config["truncate_on_absorbing"] = {"accepting": False, "rejecting": False}
@@ -164,10 +164,10 @@ def parse_config(filename):
             "The number of samples for split {} must be > 0, found {}.".format(k, v["samples"])
         assert os.path.exists(v["path"]), "Data path for split {} not found at {}.".format(k, v["path"])
 
-    assert {"accepting", "rejecting"} == set(config["avoid_absorbing_state"].keys()), \
-        "Avoidance policies must be defined for accepting and rejecting states, found: {}.".format(config["avoid_absorbing_state"].keys())
+    assert {"absorbing_accepting", "absorbing_rejecting", "self_loops"} == set(config["avoid_states"].keys()), \
+        "Avoidance policies must be defined for absorbing-accepting and absorbing-rejecting and self-loop states, found: {}.".format(config["avoid_states"].keys())
     tmp = {}
-    for k, v in config["avoid_absorbing_state"].items():
+    for k, v in config["avoid_states"].items():
         assert isinstance(v, bool) or isinstance(v, dict), \
             "Avoidance policy for {} states must be either bool or dict, found {}.".format(type(k, v))
         if isinstance(v, dict):
@@ -180,6 +180,6 @@ def parse_config(filename):
         else:
             tmp[k] = ("linear", 0.0 if v else 1.0)
 
-    config["avoid_absorbing_state"] = tmp
+    config["avoid_states"] = tmp
 
     return config

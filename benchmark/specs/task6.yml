@@ -1,6 +1,6 @@
 mode: sequential
 
-length: 5
+length: [10, 20]
 
 splits:
   train: {path: "data/train", samples: 160}
@@ -37,13 +37,14 @@ streams:
   Y: +y
   Z: -z
 
-avoid_absorbing_state:
-  accepting: { "exponential": 1e-3 }
-  rejecting: { "exponential": 1e-3 }
+avoid_states:
+  absorbing_accepting: { "linear": 0.01 }
+  absorbing_rejecting: { "linear": 0.01 }
+  self_loops: { "linear": 0.1 }
 
 truncate_on_absorbing:
-  accepting: True
-  rejecting: True
+  accepting: False
+  rejecting: False
 
 seed: 12345
 patience: 1000

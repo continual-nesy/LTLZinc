@@ -1,30 +1,21 @@
 p_0:
-  constraint: B == (A + 1) mod 10
-  predicate: Y
+  constraint: A + B = C + D
+  predicate: p
   streams:
+    W:
+      direction: input
+      name: w
     X:
       direction: input
       name: x
     Y:
-      direction: output
-      name: y
-  substitutions:
-    A: X
-    B: Y
-p_1:
-  constraint: C == (A + B) mod 10
-  predicate: Z
-  streams:
-    X:
       direction: input
-      name: x
-    Y:
-      direction: output
       name: y
     Z:
       direction: input
       name: z
   substitutions:
-    A: X
-    B: Y
-    C: Z
+    A: W
+    B: X
+    C: Y
+    D: Z

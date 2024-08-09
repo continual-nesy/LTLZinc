@@ -1,6 +1,6 @@
 p_0:
   constraint: A + B = C
-  predicate: Z
+  predicate: p
   streams:
     X:
       direction: input
@@ -17,7 +17,7 @@ p_0:
     C: Z
 p_1:
   constraint: A - B = C
-  predicate: Z
+  predicate: q
   streams:
     X:
       direction: input

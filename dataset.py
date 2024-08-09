@@ -28,7 +28,7 @@ class AbstractGenerator(abc.ABC):
         self.splits = config["splits"]
 
         self.dfa = LTLAutomaton(config["formula"], config["predicates"], config["streams"],
-                                config["avoid_absorbing_state"], config["truncate_on_absorbing"], self.rng,
+                                config["avoid_states"], config["truncate_on_absorbing"], self.rng,
                                 config["patience"])
 
         self.sampler = StateSampler(config["domains"], config["types"], self.dfa.mapping, self.rng,

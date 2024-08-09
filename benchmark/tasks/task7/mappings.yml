@@ -1,38 +1,51 @@
 p_0:
-  constraint: A < B
-  predicate: Z
+  constraint: A + B = C
+  predicate: p
   streams:
+    T:
+      direction: input
+      name: x
+    U:
+      direction: input
+      name: y
+    Z:
+      direction: output
+      name: z
+  substitutions:
+    A: T
+    B: U
+    C: Z
+p_1:
+  constraint: A + B = C
+  predicate: p
+  streams:
+    V:
+      direction: input
+      name: x
+    W:
+      direction: input
+      name: y
+    Z:
+      direction: output
+      name: z
+  substitutions:
+    A: V
+    B: W
+    C: Z
+p_2:
+  constraint: A + B = C
+  predicate: p
+  streams:
+    X:
+      direction: input
+      name: x
     Y:
       direction: input
       name: y
     Z:
-      direction: input
+      direction: output
       name: z
   substitutions:
-    A: Y
-    B: Z
-p_1:
-  constraint: (all_equal([A,B,C,D,E]))
-  predicate: X
-  streams:
-    T:
-      direction: output
-      name: t
-    U:
-      direction: output
-      name: u
-    V:
-      direction: output
-      name: v
-    W:
-      direction: output
-      name: w
-    X:
-      direction: output
-      name: x
-  substitutions:
-    A: T
-    B: U
-    C: V
-    D: W
-    E: X
+    A: X
+    B: Y
+    C: Z
