@@ -47,9 +47,9 @@ def run(opts, rng):
 
     classes = utils.domains_to_class_ids(task_opts)
 
-    train_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "train", transform=None)
-    val_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "val", transform=None)
-    test_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "test", transform=None)
+    train_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "train", opts["use_random_samples"], rng, transform=None)
+    val_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "val", False, rng, transform=None)
+    test_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "test", False, rng, transform=None)
 
     if opts["scallop_e2e"]:
         model = ScallopE2E(opts, task_opts, classes)

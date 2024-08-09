@@ -59,10 +59,11 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
 
     net.to(opts["device"])
 
-    if opts["lr"] > 0.0:
-        optimizer = torch.optim.SGD(net.parameters(), lr=opts["lr"])
+
+    if opts["pretraining_lr"] > 0.0:
+        optimizer = torch.optim.SGD(net.parameters(), lr=opts["pretraining_lr"])
     else:
-        optimizer = torch.optim.Adam(net.parameters(), lr=-opts["lr"])
+        optimizer = torch.optim.Adam(net.parameters(), lr=-opts["pretraining_lr"])
 
     if opts["grad_clipping"] > 0.0:
         for p in net.parameters():
@@ -102,6 +103,14 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
 
 
     for e in tqdm.trange(opts["pretraining_epochs"] + opts["epochs"], position=0, desc="epoch", disable=opts["verbose"] < 1):
+        # At the end of pre-training, reset the optimizer.
+        if e == opts["pretraining_epochs"]:
+            if opts["lr"] > 0.0:
+                optimizer = torch.optim.SGD(net.parameters(), lr=opts["lr"])
+            else:
+                optimizer = torch.optim.Adam(net.parameters(), lr=-opts["lr"])
+
+
         for v in metrics.values():
             for k2, v2 in v.items():
                 v2.reset()

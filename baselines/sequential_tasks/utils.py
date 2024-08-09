@@ -82,11 +82,16 @@ def get_arg_parser():
     arg_parser.add_argument('--output_path',
                             help="Path to the output folder, relative to root (default: 'outputs')",
                             type=str, default="outputs")
+    arg_parser.add_argument('--use_random_samples',
+                            help="Ignore annotated image paths and sample new ones with the same label (default: False)",
+                            type=ArgBoolean(), default=False)
     arg_parser.add_argument('--task', help="Name of the task to solve (default: 'task1')", type=str, default="task1")
 
     # Training parameters.
-    arg_parser.add_argument("--lr", help="Learning rate (positive: SGD, negative: Adam; default: -1e-3)",
+    arg_parser.add_argument("--pretraining_lr", help="Learning rate for the pre-training phase (positive: SGD, negative: Adam; default: -1e-3)",
                             type=ArgNumber(float), default=-1e-3)
+    arg_parser.add_argument("--lr", help="Learning rate (positive: SGD, negative: Adam; default: -1e-4)",
+                            type=ArgNumber(float), default=-1e-4)
     arg_parser.add_argument("--epochs", help="Training epochs (default: 10)", type=ArgNumber(int, min_val=1),
                             default=10)
     arg_parser.add_argument("--pretraining_epochs",

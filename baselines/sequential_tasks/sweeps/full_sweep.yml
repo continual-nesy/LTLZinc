@@ -23,9 +23,11 @@ parameters:
   teacher_forcing:
     value: False
   lr:
+    value: -1e-4
+  pretraining_lr:
     value: -1e-3
   sequence_lambda:
-    value: 0.1 # Equivalent to setting lr to -1e-4 after pretraining.
+    value: 1.0
   grad_clipping:
     value: 10.0
   epoch_timeout:
@@ -61,11 +63,11 @@ parameters:
   pretraining_epochs:
     value: 5
   supervision_lambda:
-    value: 0.01
+    value: 0.1
   constraint_lambda:
-    value: 0.1
+    value: 1.0
   successor_lambda:
-    value: 0.1
+    value: 1.0
   sequence_loss:
     values:
       - bce
