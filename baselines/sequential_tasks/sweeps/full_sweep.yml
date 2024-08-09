@@ -14,8 +14,6 @@ parameters:
     - task4
     - task5
     - task6
-    - task7
-    - task8
   device:
     value: cuda:0
   batch_size:
@@ -54,6 +52,8 @@ parameters:
       - gru:8
       - fuzzy:prob
       - fuzzy:logprob
+      - ddnnf:prob
+      - ddnnf:logprob
       - scallop:diffmaxmultprob:1:1
   scallop_e2e:
     value: False
