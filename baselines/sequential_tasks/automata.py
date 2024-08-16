@@ -243,8 +243,8 @@ class DFAProb(torch.nn.Module):
             for ns, constr in v.items():
                 transposed_dfa[ns][ps] = constr
 
-        prev_states = [nnf.Var("ps_{}".format(x)) for x in dfa.keys()]
-        prev_categorical_constraint = self._build_categorical_constraint(prev_states)
+        #prev_states = [nnf.Var("ps_{}".format(x)) for x in dfa.keys()]
+        #prev_categorical_constraint = self._build_categorical_constraint(prev_states)
 
         formulas = {}
         for ns, v in transposed_dfa.items():
@@ -255,7 +255,9 @@ class DFAProb(torch.nn.Module):
 
                 formulas[ns] |= nnf.Var("ps_{}".format(ps)) & constr_formula
 
-            formulas[ns] &= prev_categorical_constraint
+            #formulas[ns] = (formulas[ns] & prev_categorical_constraint).simplify() # TODO: Not needed: inputs are categorical by construction (either ground truth, or normalized previous predictions).
+            formulas[ns] = formulas[ns].simplify()
+
             if self.type == "ddnnf": # This baseline is inspired by the yet-unpublished work of <https://github.com/nmanginas>.
                 formulas[ns] = nnf.dsharp.compile(formulas[ns].to_CNF(), smooth=True).forget_aux().simplify()
 
