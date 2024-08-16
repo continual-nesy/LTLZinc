@@ -262,18 +262,20 @@ class DFAProb(torch.nn.Module):
         self.dfa = torch.nn.ModuleDict({str(k): self._visit_formula(v) for k, v in formulas.items()})
 
     def _build_categorical_constraint(self, states):
-        cc = nnf.false
+        at_least_one = nnf.false
         for x in states:
-            cc |= x
+            at_least_one |= x
 
+        all_zeros_except_one = nnf.false
         for i, x in enumerate(states):
             tmp = nnf.true
             for j, y in enumerate(states):
                 if i != j:
                     tmp &= ~y
 
-            cc &= tmp
-        return cc
+            all_zeros_except_one |= tmp
+        # Constraint in the form only_one([a,b,c,d]) <=> (a|b|c|d) & ( (!b&!c&!d) | (!a&!c&!d) | (!a&!b&!d) | (!a&!b&!c) )
+        return at_least_one & all_zeros_except_one
 
     def _visit_formula(self, node):
         if node.leaf():
