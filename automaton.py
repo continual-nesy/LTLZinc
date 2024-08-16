@@ -123,9 +123,9 @@ class LTLAutomaton:
     # Compute the sampling probability for absorbing states.
     def _get_probs(self, t, state_type):
         if self.avoid_policy[state_type][0] == "linear":
-            return min(1.0, t * self.avoid_policy[state_type][1])
+            return min(1.0, (t+1) * self.avoid_policy[state_type][1])
         else:
-            return 1. - np.exp(-t * self.avoid_policy[state_type][1])
+            return 1. - np.exp(-(t+1) * self.avoid_policy[state_type][1])
 
     def _identify_avoidable_states(self, cur_state):
         """
