@@ -137,11 +137,11 @@ class LTLAutomaton:
         next_rej_abs = set()
         next_loops = set()
 
-        for next_state in self.dfa._transition_function[cur_state].keys():
-            if cur_state == next_state:
+        for next_state, formula1 in self.dfa._transition_function[cur_state].items():
+            if cur_state == next_state and str(formula1) != "True":
                 next_loops.add(next_state)
-            for next_next, formula in self.dfa._transition_function[next_state].items(): # The transition of the successor.
-                if str(formula) == "True" and next_next == next_state: # If it is both a self-loop and has true guard, it is absorbing.
+            for next_next, formula2 in self.dfa._transition_function[next_state].items(): # The transition of the successor.
+                if str(formula2) == "True" and next_next == next_state: # If it is both a self-loop and has true guard, it is absorbing.
                     if next_next in self.dfa.accepting_states:
                         next_acc_abs.add(next_state)
                     else:
