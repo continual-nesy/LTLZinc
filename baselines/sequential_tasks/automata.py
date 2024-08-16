@@ -267,10 +267,10 @@ class DFAProb(torch.nn.Module):
             cc |= x
 
         for i, x in enumerate(states):
-            tmp = nnf.false
+            tmp = nnf.true
             for j, y in enumerate(states):
                 if i != j:
-                    tmp |= ~y
+                    tmp &= ~y
 
             cc &= tmp
         return cc
