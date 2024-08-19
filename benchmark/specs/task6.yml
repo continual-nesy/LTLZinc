@@ -3,15 +3,14 @@ mode: sequential
 length: [10, 20]
 
 splits:
-  train: {path: "data/train", samples: 160}
-  val:   {path: "data/train", samples: 20}
-  test:  {path: "data/test", samples: 20}
-minizinc_prefix: |
-  include "decreasing.mzn";
+  train: {path: "data/train", samples: 320}
+  val:   {path: "data/train", samples: 40}
+  test:  {path: "data/test", samples: 40}
+minizinc_prefix: ""
 
 predicates:
   "p(A,B, C)": "A + B = C"
-  "q(A,B,C)": "A + B = 2 * C" # "decreasing([A,B,C])"
+  "q(A,B,C)": "A + B = 2 * C"
 
 formula: "G (p(X,Y,Z) <-> X q(X,Y,Z) )"
 

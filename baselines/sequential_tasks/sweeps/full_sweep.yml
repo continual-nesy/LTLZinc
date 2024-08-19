@@ -1,7 +1,7 @@
 program: main.py
 method: grid
-project: ltlzinc
-name: All tasks
+project: LTLZinc
+name: task feasibility
 metric:
   name: val/avg_acc
   goal: maximize
@@ -38,7 +38,7 @@ parameters:
       - 12345
       - 67890
       - 88888
-      #- 22222
+      ##- 22222
   backbone_module:
     values:
       #- independent
@@ -49,17 +49,17 @@ parameters:
       - scallop:difftopkproofs:1:1
   dfa_module:
     values:
-      - mlp:8
-      - gru:8
+      - mlp:64
+      - gru:64
       - fuzzy:prob
       - fuzzy:logprob
-      - ddnnf:prob
-      - ddnnf:logprob
-      - scallop:diffmaxmultprob:1:1
+      - sddnnf:prob
+      - sddnnf:logprob
+      #- scallop:diffmaxmultprob:1:1 # This always timeouts for automata larger than 2/3 states!
   scallop_e2e:
     value: False
   train_on_irrelevant:
-    value: False
+    value: True
   pretraining_epochs:
     value: 5
   supervision_lambda:
@@ -68,6 +68,12 @@ parameters:
     value: 1.0
   successor_lambda:
     value: 1.0
+  use_random_samples:
+    value: True
+  calibrate:
+    values:
+      - True
+      - False
   sequence_loss:
     values:
       - bce

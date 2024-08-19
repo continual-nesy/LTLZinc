@@ -3,9 +3,9 @@ mode: sequential
 length: [10, 20]
 
 splits:
-  train: {path: "data/train", samples: 160}
-  val:   {path: "data/train", samples: 20}
-  test:  {path: "data/test", samples: 20}
+  train: {path: "data/train", samples: 320}
+  val:   {path: "data/train", samples: 40}
+  test:  {path: "data/test", samples: 40}
 
 minizinc_prefix: |
   include "all_equal.mzn";

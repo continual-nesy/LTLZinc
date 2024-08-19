@@ -129,11 +129,14 @@ def get_arg_parser():
                             help="Constraint module in {'mlp:NUM_HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K'} (default: 'mlp:8')",
                             type=str, default="mlp:8")
     arg_parser.add_argument('--dfa_module',
-                            help="Automaton module in {'mlp:HIDDEN_NEURONS', 'gru:HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'fuzzy:SEMIRING', 'ddnnf:SEMIRING'} (default: 'mlp:8')",
+                            help="Automaton module in {'mlp:HIDDEN_NEURONS', 'gru:HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'fuzzy:SEMIRING', 'sddnnf:SEMIRING'} (default: 'mlp:8')",
                             type=str, default="mlp:8")
     arg_parser.add_argument('--scallop_e2e',
                             help="Use an End-to-End Scallop program for constraints and automaton, instead of two disjoint programs (default: False)",
                             type=ArgBoolean(), default=False)
+    arg_parser.add_argument('--calibrate',
+                            help="Use additional temperature parameters to calibrate probabilities (default: True)",
+                            type=ArgBoolean(), default=True)
 
     # Experiment parameters.
     arg_parser.add_argument('--seed',
@@ -288,9 +291,9 @@ def preflight_checks(opts):
         opts["constraint_module"] = {"type": "scallop", "provenance": cm[1], "train_k": int(cm[2], 10), "test_k": int(cm[3], 10)}
 
     dm = opts["dfa_module"].split(":")
-    assert dm[0] in ["mlp", "gru", "scallop", "fuzzy", "ddnnf"], \
-        "Invalid automaton module, it must be one of {{'mlp:N', 'gru:N', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'fuzzy:SEMIRING', 'ddnnf:SEMIRING'}}, found {}.".format(dm[0])
-    if dm[0] == "fuzzy" or dm[0] == "ddnnf":
+    assert dm[0] in ["mlp", "gru", "scallop", "fuzzy", "sddnnf"], \
+        "Invalid automaton module, it must be one of {{'mlp:N', 'gru:N', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'fuzzy:SEMIRING', 'sddnnf:SEMIRING'}}, found {}.".format(dm[0])
+    if dm[0] == "fuzzy" or dm[0] == "sddnnf":
         assert len(dm) == 2, "Sum-product circuit automata ({}) take exactly 1 hyper-parameter (semiring), found {}.".format(dm[0], dm[1:])
         assert dm[1] in ["prob", "logprob"], "The supported semirings for sum-product circuits are {{'prob', 'logprob'}}, found {}.".format(dm[1])
         opts["dfa_module"] = {"type": dm[0], "semiring": dm[1]}
@@ -344,6 +347,11 @@ def prune_hyperparameters(opts, arg_parser):
     if loss_weights <= 0:
         ok = False
         print("Warning: At least one loss function must be enabled.")
+
+    if opts["calibrate"] != arg_parser.get_default("calibrate") and opts["constraint_module"]["type"] == "mlp" and \
+            opts["dfa_module"]["type"] in ["mlp", "gru"]:
+        ok = False
+        print("Warning: Probability calibration is enabled only if at least one of constraint module or dfa module is symbolic.")
 
     if opts["scallop_e2e"] and opts["dfa_module"]["type"] != arg_parser.get_default("dfa_module").split(":")[0]:
         ok = False

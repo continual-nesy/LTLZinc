@@ -1,4 +1,4 @@
-States: {1, 0, 2, 3}
+States: {0, 2, 3, 1}
 Initial state: 0
 Accepting states: {0, 1}
 

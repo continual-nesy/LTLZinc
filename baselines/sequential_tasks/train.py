@@ -257,7 +257,7 @@ def train_step(net, optimizer, batch, metrics, baselines, cls_size, is_pretraini
     cons_labels = [c[:, :pred_states.size(1) - 1] for c in cons_labels]
 
 
-    ps = torch.masked_select(pred_states[:, 1:], seq_mask.unsqueeze(-1)).reshape(-1, net.num_states)
+    ps = torch.masked_select(pred_states[:, 1:, :], seq_mask.unsqueeze(-1).repeat(1, 1, net.num_states)).reshape(-1, net.num_states)
     ts = torch.masked_select(states[:, 1:], seq_mask)
 
 
@@ -375,7 +375,7 @@ def eval_step(net, batch, metrics, baselines, split, cls_size, opts):
     pp = []
     tp = []
 
-    ps = torch.masked_select(pred_states[:, 1:], seq_mask.unsqueeze(-1)).reshape(-1, net.num_states)
+    ps = torch.masked_select(pred_states[:, 1:, :], seq_mask.unsqueeze(-1).repeat(1, 1, net.num_states)).reshape(-1, net.num_states)
     ts = torch.masked_select(states[:, 1:], seq_mask)
 
     for i in range(len(var_labels)):
@@ -392,7 +392,7 @@ def eval_step(net, batch, metrics, baselines, split, cls_size, opts):
     metrics[split]["succ_acc"].update(torch.exp(ps), ts)
     metrics[split]["seq_acc"].update(pred_label, label)
 
-    baselines[split]["rnd"]["succ_acc"].update(ps, ts)
+    baselines[split]["rnd"]["succ_acc"].update(torch.exp(ps), ts)
     baselines[split]["rnd"]["seq_acc"].update(pred_label, label)
-    baselines[split]["mp"]["succ_acc"].update(ps, ts)
+    baselines[split]["mp"]["succ_acc"].update(torch.exp(ps), ts)
     baselines[split]["mp"]["seq_acc"].update(pred_label, label)

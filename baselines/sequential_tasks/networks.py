@@ -26,7 +26,12 @@ class SequenceClassifier(torch.nn.Module):
 
         # Constraint module can either be an MLP or a Scallop program.
         if opts["constraint_module"]["type"] == "mlp":
-            self.constraints = ConstraintMLP(opts["constraint_module"]["neurons"], num_classes, self.propositions)
+            self.constraints = ConstraintMLP(
+                opts["constraint_module"]["neurons"],
+                num_classes,
+                self.propositions,
+                opts["calibrate"],
+                opts["eps"])
         else:
             self.constraints = ConstraintScallop(
                 program_path,
@@ -34,17 +39,37 @@ class SequenceClassifier(torch.nn.Module):
                 self.propositions,
                 opts["constraint_module"]["provenance"],
                 opts["constraint_module"]["train_k"],
-                opts["constraint_module"]["test_k"]
+                opts["constraint_module"]["test_k"],
+                opts["calibrate"],
+                opts["eps"]
             )
 
         # DFA module can be: MLP, GRU, fuzzy automaton with probability semiring,
         # fuzzy automaton with log-probability semiring, or Scallop program.
         if opts["dfa_module"]["type"] == "mlp":
-            self.dfa = DFAMLP(opts["dfa_module"]["hidden_n"], self.propositions, task_opts["automaton"])
+            self.dfa = DFAMLP(
+                opts["dfa_module"]["hidden_n"],
+                self.propositions,
+                task_opts["automaton"],
+                opts["calibrate"],
+                opts["eps"]
+            )
         elif opts["dfa_module"]["type"] == "gru":
-            self.dfa = DFAGRU(opts["dfa_module"]["hidden_n"], self.propositions, task_opts["automaton"])
-        elif opts["dfa_module"]["type"] == "fuzzy" or opts["dfa_module"]["type"] == "ddnnf":
-            self.dfa = DFAProb(task_opts["automaton"], type=opts["dfa_module"]["type"], semiring=opts["dfa_module"]["semiring"], eps=opts["eps"], neginf=opts["neginf"])
+            self.dfa = DFAGRU(
+                opts["dfa_module"]["hidden_n"],
+                self.propositions,
+                task_opts["automaton"],
+                opts["calibrate"],
+                opts["eps"]
+            )
+        elif opts["dfa_module"]["type"] == "fuzzy" or opts["dfa_module"]["type"] == "sddnnf":
+            self.dfa = DFAProb(task_opts["automaton"],
+                               type=opts["dfa_module"]["type"],
+                               semiring=opts["dfa_module"]["semiring"],
+                               calibrate=opts["calibrate"],
+                               eps=opts["eps"],
+                               neginf=opts["neginf"]
+            )
         elif opts["dfa_module"]["type"] == "scallop":
             self.dfa = DFAScallop(
                 self.propositions,
@@ -52,6 +77,7 @@ class SequenceClassifier(torch.nn.Module):
                 opts["dfa_module"]["provenance"],
                 opts["dfa_module"]["train_k"],
                 opts["dfa_module"]["test_k"],
+                opts["calibrate"],
                 opts["eps"]
             )
 
@@ -137,8 +163,14 @@ class SequenceClassifier(torch.nn.Module):
                         prop_labels[j].append(tmp_constr[j])
 
                 label = label.index_put(values=tmp_label, indices=non_masked_batch_tuple)
-            else:
-                break # Every sequence in the batch has been truncated. No need to continue iterating.
+            else: # Every sequence in the batch has been truncated. No need to continue iterating, just copy old values.
+                log_states.append(log_states[-1])
+                states.append(states[-1])
+
+                for j, _ in enumerate(self.variables):
+                    vars[j].append(vars[j][-1])
+                for j, _ in enumerate(self.propositions):
+                    prop_labels[j].append(prop_labels[j][-1])
 
         return [torch.stack(v, dim=1) for v in vars], [torch.stack(p, dim=1) for p in prop_labels], torch.stack(log_states, dim=1), label
 
