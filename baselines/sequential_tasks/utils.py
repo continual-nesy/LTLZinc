@@ -135,6 +135,9 @@ def get_arg_parser():
     arg_parser.add_argument('--scallop_e2e',
                             help="Use an End-to-End Scallop program for constraints and automaton, instead of two disjoint programs (default: False)",
                             type=ArgBoolean(), default=False)
+    arg_parser.add_argument('--use_label_oracle',
+                            help="Replace the backbone module with ground truth annotations (default: False)", type=ArgBoolean(),
+                            default=False)
     arg_parser.add_argument('--use_constraint_oracle',
                             help="Replace the constraint module with ground truth annotations (default: False)", type=ArgBoolean(),
                             default=False)
@@ -280,7 +283,7 @@ def preflight_checks(opts):
     if cm[0] == "mlp":
         assert len(cm) == 2, \
             "The MLP constraint module takes exactly 1 hyper-parameter (number of neurons in the hidden layer), found {}.".format(cm[1:])
-        assert int(cm[1], 10) > 1, \
+        assert int(cm[1], 10) >= 1, \
             "The number of hidden neurons for the constraint module must be an integer >= 1, found {}.".format(cm[1])
         opts["constraint_module"] = {"type": "mlp", "neurons": int(cm[1], 10)}
     elif cm[0] == "scallop":
@@ -367,6 +370,14 @@ def prune_hyperparameters(opts, arg_parser):
         ok = False
         opts["scallop_e2e"] = False # Reverting to allow continuation in case of --abort_irrelevant = False.
         print("Warning: Constraint module is incompatible with --scallop_e2e=True. Ignoring the latter.")
+
+    if opts["use_label_oracle"] and (opts["supervision_lambda"] != arg_parser.get_default("supervision_lambda") or
+        opts["pretraining_epochs"] != arg_parser.get_default("pretraining_epochs")):
+        ok = False
+        opts["epochs"] += opts["pretraining_epochs"]
+        opts["pretraining_epochs"] = 0
+        print("Warning: When using the label oracle, supervision_lambda and pretraining_epochs have no effect.")
+
 
     if opts["use_constraint_oracle"] and opts["constraint_lambda"] != arg_parser.get_default("constraint_lambda"):
         ok = False

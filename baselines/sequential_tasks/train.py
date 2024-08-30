@@ -126,11 +126,6 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
         for batch in (bar := tqdm.tqdm(train_dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
             loss, ok, step_tags = train_step(net, optimizer, batch, metrics, baselines, cls_size, e < opts["pretraining_epochs"], opts)
 
-            # If there was an error, abort training.
-            if not ok:
-                break
-
-
             return_tags.update(step_tags)
 
             bar.set_postfix_str(
@@ -140,6 +135,11 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
                     metrics["train"]["std_grad_norm"].compute(), metrics["train"]["label_acc"].compute(),
                     metrics["train"]["const_acc"].compute(), metrics["train"]["succ_acc"].compute(),
                     metrics["train"]["seq_acc"].compute()))
+
+
+            # If there was an error, abort training.
+            if not ok:
+                break
 
         times = {"train": time.time() - start_time}
         with torch.no_grad():
@@ -231,15 +231,20 @@ def train_step(net, optimizer, batch, metrics, baselines, cls_size, is_pretraini
     cons_mask = [p.to(opts["device"]) for p in cons_mask]
     label = label.to(opts["device"])
 
+    if opts["use_label_oracle"]:
+        true_lbl = var_labels
+    else:
+        true_lbl = None
+
     if opts["use_constraint_oracle"]:
         true_cs = cons_labels
     else:
         true_cs = None
 
     if opts["teacher_forcing"]:
-        pred_vars, pred_props, pred_states, pred_label = net.forward_sequence(imgs, seq_mask, true_states=states, true_constraints=true_cs)
+        pred_vars, pred_props, pred_states, pred_label = net.forward_sequence(imgs, seq_mask, true_states=states, true_constraints=true_cs, true_labels=true_lbl)
     else:
-        pred_vars, pred_props, pred_states, pred_label = net.forward_sequence(imgs, seq_mask, detach_prev_state=opts["detach_previous_state"], true_constraints=true_cs)
+        pred_vars, pred_props, pred_states, pred_label = net.forward_sequence(imgs, seq_mask, detach_prev_state=opts["detach_previous_state"], true_constraints=true_cs, true_labels=true_lbl)
 
     # Rather ugly, but effective, way to flatten timesteps in a way which prevents losses from being updated with averages of averages.
     pv = []
@@ -369,13 +374,18 @@ def eval_step(net, batch, metrics, baselines, split, cls_size, opts):
     cons_labels = [p.to(opts["device"]) for p in cons_labels]
     label = label.to(opts["device"])
 
+    if opts["use_label_oracle"]:
+        true_lbl = var_labels
+    else:
+        true_lbl = None
+
     if opts["use_constraint_oracle"]:
         true_cs = cons_labels
     else:
         true_cs = None
 
     # Teacher forcing is always disabled in evaluation!
-    pred_vars, pred_props, pred_states, pred_label = net.forward_sequence(imgs, seq_mask, true_constraints=true_cs)
+    pred_vars, pred_props, pred_states, pred_label = net.forward_sequence(imgs, seq_mask, true_constraints=true_cs, true_labels=true_lbl)
 
     # The same trick used to unfold timesteps for the loss is used here for metrics.
     pv = []

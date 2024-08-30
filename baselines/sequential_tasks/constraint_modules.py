@@ -51,6 +51,7 @@ class ConstraintScallop(torch.nn.Module):
             train_k=train_k,
             test_k=test_k,
             retain_graph=True,
+            #wmc_with_disjunctions=True,
             #early_discard=False,
             )
 
