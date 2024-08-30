@@ -46,6 +46,7 @@ parameters:
   constraint_module:
     values:
       - mlp:8
+      #- mlp:64 # TODO: try this on separate sweep and merge results.
       - scallop:difftopkproofs:1:1
   dfa_module:
     values:

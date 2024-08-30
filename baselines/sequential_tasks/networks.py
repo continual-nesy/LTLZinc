@@ -21,6 +21,7 @@ class SequenceClassifier(torch.nn.Module):
         num_classes = sum([len(v) for v in classes.values()])
         self.num_states = len(task_opts["automaton"]["states"])
         self.variables = sorted(classes.keys())
+        self.accepting = task_opts["automaton"]["accepting"]
 
         program_path = "{}/{}/{}".format(opts["prefix_path"], opts["annotations_path"], opts["task"])
 
@@ -82,9 +83,13 @@ class SequenceClassifier(torch.nn.Module):
             )
 
 
-    def forward(self, log_s0, s0, imgs):
+    def forward(self, log_s0, s0, imgs, true_constraints=None):
         img_labels = {v: self.backbone[v](imgs[i]) for i, v in enumerate(self.variables)}
-        constraint_labels = self.constraints(img_labels)
+        if true_constraints is None:
+            constraint_labels = self.constraints(img_labels)
+        else:
+            constraint_labels = {p: true_constraints[i] for i, p in enumerate(self.propositions)}
+
         log_next_state, next_state, accepted = self.dfa(log_s0, s0, constraint_labels)
 
         return [img_labels[k] for k in sorted(img_labels.keys())], \
@@ -92,7 +97,7 @@ class SequenceClassifier(torch.nn.Module):
             log_next_state, next_state, accepted
 
 
-    def forward_sequence(self, imgs, mask, true_states=None, detach_prev_state=False):
+    def forward_sequence(self, imgs, mask, true_states=None, detach_prev_state=False, true_constraints=None):
         """
         Process a batch of sequences of different lengths by iterating in time_steps, instead of the naive approach
         in time_steps * batch_size. Formally the complexity is the same, but batching is delegated to torch for efficient
@@ -101,6 +106,7 @@ class SequenceClassifier(torch.nn.Module):
         :param mask: torch.Tensor mask for each sequence of the batch.
         :param true_states: List of one-hot true states for each time step. If None disables teacher forcing.
         :param detach_prev_state: If True, detaches the gradient at each step, during backpropagation through time.
+        :param true_constraints: True constraints for oracle baseline.
         :return: Tuple (List of variable predictions, List of constraint predictions, torch.Tensor of state traces, sequence label).
                  Categorical values are returned in log space, while scalar values are returned in [0-1].
         """
@@ -138,15 +144,19 @@ class SequenceClassifier(torch.nn.Module):
             non_masked_batch_tuple = mask[:, i].nonzero(as_tuple=True)
             sliced_imgs = [x[non_masked_batch, i, :, :, :] for x in imgs]
 
+            if true_constraints is not None:
+                true_cs = [p[non_masked_batch,i] for p in true_constraints]
+            else:
+                true_cs = None
 
             if non_masked_batch.size(0) > 0:
                 if one_hot_true_states is None:
                     if detach_prev_state:
-                        tmp_vars, tmp_constr, tmp_log_s1, tmp_s1, tmp_label = self.forward(log_states[i][non_masked_batch,:].detach(), states[i][non_masked_batch,:].detach(), sliced_imgs)
+                        tmp_vars, tmp_constr, tmp_log_s1, tmp_s1, tmp_label = self.forward(log_states[i][non_masked_batch,:].detach(), states[i][non_masked_batch,:].detach(), sliced_imgs, true_constraints=true_cs)
                     else:
-                        tmp_vars, tmp_constr, tmp_log_s1,  tmp_s1, tmp_label = self.forward(log_states[i][non_masked_batch,:], states[i][non_masked_batch,:], sliced_imgs)
+                        tmp_vars, tmp_constr, tmp_log_s1,  tmp_s1, tmp_label = self.forward(log_states[i][non_masked_batch,:], states[i][non_masked_batch,:], sliced_imgs, true_constraints=true_cs)
                 else:  # Teacher forcing:
-                    tmp_vars, tmp_constr, tmp_log_s1, tmp_s1, tmp_label = self.forward(log_one_hot_true_states[non_masked_batch, i, :].squeeze(1), one_hot_true_states[non_masked_batch, i, :].squeeze(1), sliced_imgs)
+                    tmp_vars, tmp_constr, tmp_log_s1, tmp_s1, tmp_label = self.forward(log_one_hot_true_states[non_masked_batch, i, :].squeeze(1), one_hot_true_states[non_masked_batch, i, :].squeeze(1), sliced_imgs, true_constraints=true_cs)
 
                 log_states.append(log_states[-1].index_put(values=tmp_log_s1, indices=non_masked_batch_tuple))
                 states.append(states[-1].index_put(values=tmp_s1, indices=non_masked_batch_tuple))

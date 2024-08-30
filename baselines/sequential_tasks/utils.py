@@ -104,7 +104,7 @@ def get_arg_parser():
                             type=ArgNumber(float, min_val=0.0), default=0.0)
     arg_parser.add_argument("--successor_lambda", help="Weight for next-state supervision (default: 0.0)",
                             type=ArgNumber(float, min_val=0.0), default=0.0)
-    arg_parser.add_argument("--sequence_lambda", help="Weight for end-to-end sequence supervision (default: 1.0)",
+    arg_parser.add_argument("--sequence_lambda", help="Weight for end-to-end sequence supervision (default: 0.0)",
                             type=ArgNumber(float, min_val=0.0), default=1.0)
     arg_parser.add_argument('--sequence_loss',
                             help="Type of loss function for sequence classification in {'bce', 'fuzzy'} (default: 'bce')",
@@ -121,6 +121,7 @@ def get_arg_parser():
     arg_parser.add_argument('--grad_clipping', help="Norm for gradient clipping, disable if 0.0 (default: 0.0)",
                             type=ArgNumber(float, min_val=0.0), default=0.0)
 
+
     # Model parameters.
     arg_parser.add_argument('--backbone_module',
                             help="Perceptual backbone in {'independent', 'dataset'} (default: 'dataset')",
@@ -134,9 +135,12 @@ def get_arg_parser():
     arg_parser.add_argument('--scallop_e2e',
                             help="Use an End-to-End Scallop program for constraints and automaton, instead of two disjoint programs (default: False)",
                             type=ArgBoolean(), default=False)
+    arg_parser.add_argument('--use_constraint_oracle',
+                            help="Replace the constraint module with ground truth annotations (default: False)", type=ArgBoolean(),
+                            default=False)
     arg_parser.add_argument('--calibrate',
-                            help="Use additional temperature parameters to calibrate probabilities (default: True)",
-                            type=ArgBoolean(), default=True)
+                            help="Use additional temperature parameters to calibrate probabilities (default: False)",
+                            type=ArgBoolean(), default=False)
 
     # Experiment parameters.
     arg_parser.add_argument('--seed',
@@ -341,7 +345,7 @@ def prune_hyperparameters(opts, arg_parser):
 
     if opts["teacher_forcing"] and opts["detach_previous_state"] != arg_parser.get_default("detach_previous_state"):
         ok = False
-        print("Warning: with teacher forcing, detach_previous_state has no effect.")
+        print("Warning: With teacher forcing, detach_previous_state has no effect.")
 
     loss_weights = sum([v for k, v in opts.items() if k.endswith("_lambda")])
     if loss_weights <= 0:
@@ -362,7 +366,11 @@ def prune_hyperparameters(opts, arg_parser):
     if opts["scallop_e2e"] and opts["constraint_module"]["type"] != "scallop":
         ok = False
         opts["scallop_e2e"] = False # Reverting to allow continuation in case of --abort_irrelevant = False.
-        print("Warning: constraint module is incompatible with --scallop_e2e=True. Ignoring the latter.")
+        print("Warning: Constraint module is incompatible with --scallop_e2e=True. Ignoring the latter.")
+
+    if opts["use_constraint_oracle"] and opts["constraint_lambda"] != arg_parser.get_default("constraint_lambda"):
+        ok = False
+        print("Warning: When using the constraint oracle, constraint_lambda has no effect.")
 
     return ok
 
