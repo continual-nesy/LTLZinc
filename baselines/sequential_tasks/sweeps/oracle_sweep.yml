@@ -93,3 +93,7 @@ parameters:
       - 0.05
       - 0.1
       - 0.2
+  oracle_type:
+    values:
+      - flip
+      - confidence

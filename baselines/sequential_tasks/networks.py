@@ -12,7 +12,7 @@ class SequenceClassifier(torch.nn.Module):
     Generic classifier, it contains a perceptual component (self.backbone), a constraint predictor (self.constraints) and
     an automaton module (self.dfa).
     """
-    def __init__(self, opts, task_opts, classes, oracle_sigma):
+    def __init__(self, opts, task_opts, classes, oracle_noise, oracle_type):
         super().__init__()
 
         self.backbone = torch.nn.ModuleDict(backbone_factory[opts["backbone_module"]][opts["task"]]())
@@ -24,7 +24,8 @@ class SequenceClassifier(torch.nn.Module):
 
         self.num_classes = {k: len(v) for k, v in classes.items()}
 
-        self.oracle_noise = oracle_sigma
+        self.oracle_noise = oracle_noise
+        self.oracle_type = oracle_type
 
         program_path = "{}/{}/{}".format(opts["prefix_path"], opts["annotations_path"], opts["task"])
 
@@ -90,7 +91,7 @@ class SequenceClassifier(torch.nn.Module):
         if true_labels is None:
             img_labels = {v: self.backbone[v](imgs[i]) for i, v in enumerate(self.variables)}
         else:
-            img_labels = {v: torch.log(F.one_hot(true_labels[i], num_classes=self.num_classes[v]).to(torch.float32)).detach() for i, v in enumerate(self.variables)}
+            img_labels = {v: torch.log(true_labels[i]).detach() for i, v in enumerate(self.variables)}
 
         if true_constraints is None:
             constraint_labels = self.constraints(img_labels)
@@ -155,17 +156,33 @@ class SequenceClassifier(torch.nn.Module):
             if true_labels is not None:
                 true_lbl = [v[non_masked_batch, i] for v in true_labels]
                 if self.oracle_noise > 0.0:
-                    rnd_lbl = [torch.randint_like(v, self.num_classes[self.variables[j]], device=v.device) for j, v in enumerate(true_lbl)]
-                    decision = [torch.rand_like(v.to(torch.float32), device=v.device) for v in true_lbl]
-                    true_lbl = [torch.where(decision[j] < self.oracle_noise, rnd_lbl[j], v) for j, v in enumerate(true_lbl)]
+                    if self.oracle_type == "flip":
+                        rnd_lbl = [torch.randint_like(v, self.num_classes[self.variables[j]], device=v.device) for j, v in enumerate(true_lbl)]
+                        decision = [torch.rand_like(v.to(torch.float32), device=v.device) for v in true_lbl]
+                        true_lbl = [F.one_hot(torch.where(decision[j] < self.oracle_noise, rnd_lbl[j], v).to(torch.float32), num_classes=self.num_classes[self.variables[j]]) for j, v in enumerate(true_lbl)]
+                    else:
+                        true_lbl = [F.one_hot(v, num_classes=self.num_classes[self.variables[j]]).to(torch.float32) for j, v in enumerate(true_lbl)]
+                        noise = [torch.rand_like(v, device=v.device) * self.oracle_noise for v in true_lbl]
+                        # Subtracting noise and taking the absolute value makes 0.0 labels higher and 1.0 lower.
+                        true_lbl = [torch.abs(v - noise[j]) for j, v in enumerate(true_lbl)]
+                        # Renormalize probabilities.
+                        true_lbl = [v / torch.sum(v, dim=-1, keepdim=True) for v in true_lbl]
+                else:
+                    true_lbl = [F.one_hot(v, num_classes=self.num_classes[self.variables[j]]).to(torch.float32) for j, v in enumerate(true_lbl)]
             else:
                 true_lbl = None
 
             if true_constraints is not None:
+                true_cs = [p[non_masked_batch, i] for p in true_constraints]
                 if self.oracle_noise > 0.0:
-                    noise = [torch.rand_like(p[non_masked_batch, i], device=p.device) * self.oracle_noise for p in true_constraints]
-                # Subtracting noise and taking the absolute value makes 0.0 labels higher and 1.0 lower.
-                true_cs = [torch.abs(p[non_masked_batch,i] - noise[j]) for j, p in enumerate(true_constraints)]
+                    if self.oracle_type == "flip":
+                        rnd_cs = [torch.randint_like(p, 2, device=p.device) for j, p in enumerate(true_cs)]
+                        decision = [torch.rand_like(p.to(torch.float32), device=p.device) for p in true_cs]
+                        true_cs = [torch.where(decision[j] < self.oracle_noise, rnd_cs[j], p) for j, p in enumerate(true_cs)]
+                    else:
+                        noise = [torch.rand_like(p[non_masked_batch, i], device=p.device) * self.oracle_noise for p in true_constraints]
+                        # Subtracting noise and taking the absolute value makes 0.0 labels higher and 1.0 lower.
+                        true_cs = [torch.abs(p[non_masked_batch,i] - noise[j]) for j, p in enumerate(true_constraints)]
             else:
                 true_cs = None
 

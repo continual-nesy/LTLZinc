@@ -54,7 +54,7 @@ def run(opts, rng):
     if opts["scallop_e2e"]:
         model = ScallopE2E(opts, task_opts, classes)
     else:
-        model = SequenceClassifier(opts, task_opts, classes, opts["oracle_noise"])
+        model = SequenceClassifier(opts, task_opts, classes, opts["oracle_noise"], opts["oracle_type"])
 
     for x in train(model, classes, train_ds, val_ds, test_ds, opts):
         yield x

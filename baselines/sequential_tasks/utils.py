@@ -142,8 +142,11 @@ def get_arg_parser():
                             help="Replace the constraint module with ground truth annotations (default: False)", type=ArgBoolean(),
                             default=False)
     arg_parser.add_argument('--oracle_noise',
-                            help="Value for oracle noise injection (probability of flipping labels randomly, uniform additive noise for constraints; default: 0.0)",
+                            help="Value for oracle noise injection (default: 0.0)",
                             type=ArgNumber(float, min_val=0.0, max_val=1.0), default=0.0)
+    arg_parser.add_argument('--oracle_type',
+                            help="Type of oracle noise in {'flip', 'confidence'} (default: 'flip')",
+                            type=str, default="flip", choices=["flip", "confidence"])
     arg_parser.add_argument('--calibrate',
                             help="Use additional temperature parameters to calibrate probabilities (default: False)",
                             type=ArgBoolean(), default=False)
@@ -400,19 +403,28 @@ def prune_hyperparameters(opts, arg_parser):
         ok = False
         print("Warning: oracle_noise is ignored if neither oracle is used.")
 
+    if opts["oracle_noise"] == 0.0 and opts["oracle_type"] != arg_parser.get_default("oracle_type"):
+        ok = False
+        print("Warning: oracle_type is ignored with --oracle_noise=0.0")
+
 
     #################################
     # TODO: REMOVE THIS SECTION AFTER ORACLE SWEEP!
     if not opts["use_constraint_oracle"] and opts["constraint_module"] == "mlp:8":
         ok = False
+        print("Skip 1")
     if not opts["use_label_oracle"] and opts["pretraining_epochs"] == 0:
         ok = False
+        print("Skip 2")
     if not opts["use_label_oracle"] and opts["supervision_lambda"] == 0.0:
         ok = False
+        print("Skip 3")
     if not opts["use_constraint_oracle"] and opts["constraint_lambda"] == 0.0:
         ok = False
+        print("Skip 4")
     if not opts["use_label_oracle"] and not opts["use_constraint_oracle"]:
         ok = False
+        print("Skip 5")
 
     #################################
 
