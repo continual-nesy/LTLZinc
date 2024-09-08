@@ -12,7 +12,7 @@ class SequenceClassifier(torch.nn.Module):
     Generic classifier, it contains a perceptual component (self.backbone), a constraint predictor (self.constraints) and
     an automaton module (self.dfa).
     """
-    def __init__(self, opts, task_opts, classes):
+    def __init__(self, opts, task_opts, classes, oracle_sigma):
         super().__init__()
 
         self.backbone = torch.nn.ModuleDict(backbone_factory[opts["backbone_module"]][opts["task"]]())
@@ -23,6 +23,8 @@ class SequenceClassifier(torch.nn.Module):
         self.accepting = task_opts["automaton"]["accepting"]
 
         self.num_classes = {k: len(v) for k, v in classes.items()}
+
+        self.oracle_noise = oracle_sigma
 
         program_path = "{}/{}/{}".format(opts["prefix_path"], opts["annotations_path"], opts["task"])
 
@@ -151,12 +153,19 @@ class SequenceClassifier(torch.nn.Module):
             sliced_imgs = [x[non_masked_batch, i, :, :, :] for x in imgs]
 
             if true_labels is not None:
-                true_lbl = [v[non_masked_batch,i] for v in true_labels]
+                true_lbl = [v[non_masked_batch, i] for v in true_labels]
+                if self.oracle_noise > 0.0:
+                    rnd_lbl = [torch.randint_like(v, self.num_classes[self.variables[j]], device=v.device) for j, v in enumerate(true_lbl)]
+                    decision = [torch.rand_like(v.to(torch.float32), device=v.device) for v in true_lbl]
+                    true_lbl = [torch.where(decision[j] < self.oracle_noise, rnd_lbl[j], v) for j, v in enumerate(true_lbl)]
             else:
                 true_lbl = None
 
             if true_constraints is not None:
-                true_cs = [p[non_masked_batch,i] for p in true_constraints]
+                if self.oracle_noise > 0.0:
+                    noise = [torch.rand_like(p[non_masked_batch, i], device=p.device) * self.oracle_noise for p in true_constraints]
+                # Subtracting noise and taking the absolute value makes 0.0 labels higher and 1.0 lower.
+                true_cs = [torch.abs(p[non_masked_batch,i] - noise[j]) for j, p in enumerate(true_constraints)]
             else:
                 true_cs = None
 

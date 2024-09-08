@@ -1,0 +1,95 @@
+program: main.py
+method: grid
+project: LTLZinc
+name: Oracles
+metric:
+  name: val/avg_acc
+  goal: maximize
+parameters:
+  task:
+    values:
+    - task1
+    - task2
+    - task3
+    - task4
+    - task5
+    - task6
+  device:
+    value: cuda:0
+  batch_size:
+    value: 32
+  epochs:
+    value: 20
+  teacher_forcing:
+    value: False
+  lr:
+    value: -1e-4
+  pretraining_lr:
+    value: -1e-3
+  sequence_lambda:
+    value: 1.0
+  grad_clipping:
+    value: 10.0
+  epoch_timeout:
+    value: 15
+
+  seed:
+    values:
+      - 12345
+      - 67890
+      - 88888
+      ##- 22222
+  backbone_module:
+    values:
+      #- independent
+      - dataset
+  constraint_module:
+    values:
+      - mlp:8
+      - scallop:difftopkproofs:1:1
+  dfa_module:
+    values:
+      - fuzzy:prob
+      - sddnnf:prob
+  scallop_e2e:
+    value: False
+  train_on_irrelevant:
+    value: True
+  pretraining_epochs:
+    values:
+      - 0
+      - 5
+  supervision_lambda:
+    values:
+     - 0.0
+     - 0.1
+  constraint_lambda:
+    values:
+      - 0.0
+      - 1.0
+  successor_lambda:
+    value: 1.0
+  use_random_samples:
+    value: True
+  calibrate:
+    values:
+      - True
+      #- False
+  sequence_loss:
+    values:
+      - bce
+      #- fuzzy
+  use_label_oracle:
+    values:
+      - False
+      - True
+  use_constraint_oracle:
+    values:
+      - False
+      - True
+  oracle_noise:
+    values:
+      - 0.0
+      - 0.05
+      - 0.1
+      - 0.2

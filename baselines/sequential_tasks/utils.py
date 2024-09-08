@@ -141,6 +141,9 @@ def get_arg_parser():
     arg_parser.add_argument('--use_constraint_oracle',
                             help="Replace the constraint module with ground truth annotations (default: False)", type=ArgBoolean(),
                             default=False)
+    arg_parser.add_argument('--oracle_noise',
+                            help="Value for oracle noise injection (probability of flipping labels randomly, uniform additive noise for constraints; default: 0.0)",
+                            type=ArgNumber(float, min_val=0.0, max_val=1.0), default=0.0)
     arg_parser.add_argument('--calibrate',
                             help="Use additional temperature parameters to calibrate probabilities (default: False)",
                             type=ArgBoolean(), default=False)
@@ -371,6 +374,16 @@ def prune_hyperparameters(opts, arg_parser):
         opts["scallop_e2e"] = False # Reverting to allow continuation in case of --abort_irrelevant = False.
         print("Warning: Constraint module is incompatible with --scallop_e2e=True. Ignoring the latter.")
 
+    if opts["scallop_e2e"] and opts["use_label_oracle"]:
+        ok = False
+        opts["use_label_oracle"] = False # Reverting to allow continuation in case of --abort_irrelevant = False.
+        print("Warning: --scallop_e2e=True and --use_label_oracle=True are incompatible. Ignoring the latter.")
+
+    if opts["scallop_e2e"] and opts["use_constraint_oracle"]:
+        ok = False
+        opts["use_constraint_oracle"] = False # Reverting to allow continuation in case of --abort_irrelevant = False.
+        print("Warning: --scallop_e2e=True and --use_constraint_oracle=True are incompatible. Ignoring the latter.")
+
     if opts["use_label_oracle"] and (opts["supervision_lambda"] != arg_parser.get_default("supervision_lambda") or
         opts["pretraining_epochs"] != arg_parser.get_default("pretraining_epochs")):
         ok = False
@@ -382,6 +395,26 @@ def prune_hyperparameters(opts, arg_parser):
     if opts["use_constraint_oracle"] and opts["constraint_lambda"] != arg_parser.get_default("constraint_lambda"):
         ok = False
         print("Warning: When using the constraint oracle, constraint_lambda has no effect.")
+
+    if not opts["use_label_oracle"] and not opts["use_constraint_oracle"] and opts["oracle_noise"] != arg_parser.get_default("oracle_noise"):
+        ok = False
+        print("Warning: oracle_noise is ignored if neither oracle is used.")
+
+
+    #################################
+    # TODO: REMOVE THIS SECTION AFTER ORACLE SWEEP!
+    if not opts["use_constraint_oracle"] and opts["constraint_module"] == "mlp:8":
+        ok = False
+    if not opts["use_label_oracle"] and opts["pretraining_epochs"] == 0:
+        ok = False
+    if not opts["use_label_oracle"] and opts["supervision_lambda"] == 0.0:
+        ok = False
+    if not opts["use_constraint_oracle"] and opts["constraint_lambda"] == 0.0:
+        ok = False
+    if not opts["use_label_oracle"] and not opts["use_constraint_oracle"]:
+        ok = False
+
+    #################################
 
     return ok
 
