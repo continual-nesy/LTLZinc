@@ -394,6 +394,10 @@ def prune_hyperparameters(opts, arg_parser):
         opts["pretraining_epochs"] = 0
         print("Warning: When using the label oracle, supervision_lambda and pretraining_epochs have no effect.")
 
+    if opts["use_constraint_oracle"] and opts["use_label_oracle"]:
+        ok = False
+        print("Warning: Constraint oracle overrides label oracle.")
+
 
     if opts["use_constraint_oracle"] and opts["constraint_lambda"] != arg_parser.get_default("constraint_lambda"):
         ok = False
