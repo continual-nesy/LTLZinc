@@ -159,7 +159,7 @@ class SequenceClassifier(torch.nn.Module):
                     if self.oracle_type == "flip":
                         rnd_lbl = [torch.randint_like(v, self.num_classes[self.variables[j]], device=v.device) for j, v in enumerate(true_lbl)]
                         decision = [torch.rand_like(v.to(torch.float32), device=v.device) for v in true_lbl]
-                        true_lbl = [F.one_hot(torch.where(decision[j] < self.oracle_noise, rnd_lbl[j], v).to(torch.float32), num_classes=self.num_classes[self.variables[j]]) for j, v in enumerate(true_lbl)]
+                        true_lbl = [F.one_hot(torch.where(decision[j] < self.oracle_noise, rnd_lbl[j], v).to(torch.int64), num_classes=self.num_classes[self.variables[j]]).to(torch.float32) for j, v in enumerate(true_lbl)]
                     else:
                         true_lbl = [F.one_hot(v, num_classes=self.num_classes[self.variables[j]]).to(torch.float32) for j, v in enumerate(true_lbl)]
                         noise = [torch.rand_like(v, device=v.device) * self.oracle_noise for v in true_lbl]
