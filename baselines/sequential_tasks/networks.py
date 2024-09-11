@@ -26,6 +26,7 @@ class SequenceClassifier(torch.nn.Module):
 
         self.oracle_noise = oracle_noise
         self.oracle_type = oracle_type
+        self.eps = opts["eps"]
 
         program_path = "{}/{}/{}".format(opts["prefix_path"], opts["annotations_path"], opts["task"])
 
@@ -91,7 +92,7 @@ class SequenceClassifier(torch.nn.Module):
         if true_labels is None:
             img_labels = {v: self.backbone[v](imgs[i]) for i, v in enumerate(self.variables)}
         else:
-            img_labels = {v: torch.log(true_labels[i]).detach() for i, v in enumerate(self.variables)}
+            img_labels = {v: torch.log(true_labels[i] + self.eps).detach() for i, v in enumerate(self.variables)}
 
         if true_constraints is None:
             constraint_labels = self.constraints(img_labels)
