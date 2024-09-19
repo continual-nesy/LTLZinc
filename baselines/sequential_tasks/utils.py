@@ -411,27 +411,6 @@ def prune_hyperparameters(opts, arg_parser):
         ok = False
         print("Warning: oracle_type is ignored with --oracle_noise=0.0")
 
-
-    #################################
-    # TODO: REMOVE THIS SECTION AFTER ORACLE SWEEP!
-    if not opts["use_constraint_oracle"] and opts["constraint_module"] == "mlp:8":
-        ok = False
-        print("Skip 1")
-    if not opts["use_label_oracle"] and opts["pretraining_epochs"] == 0:
-        ok = False
-        print("Skip 2")
-    if not opts["use_label_oracle"] and opts["supervision_lambda"] == 0.0:
-        ok = False
-        print("Skip 3")
-    if not opts["use_constraint_oracle"] and opts["constraint_lambda"] == 0.0:
-        ok = False
-        print("Skip 4")
-    if not opts["use_label_oracle"] and not opts["use_constraint_oracle"]:
-        ok = False
-        print("Skip 5")
-
-    #################################
-
     return ok
 
 
