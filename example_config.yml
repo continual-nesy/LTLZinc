@@ -2,9 +2,9 @@
 
 # [Mandatory] Mode of the task:
 #   sequential: Generate a single task with samples composed of traces of images.
-#   sequential_positive_only: same as sequential, but only generate traces satisfying the formula.
+#   sequential_positive_only: same as sequential, but only generate traces satisfying the specification.
 #   incremental: Generate an incremental collection of tasks. Each task is a collection of non-temporal samples which can be shuffled.
-mode: sequential # sequential: Generate a single task with samples composed of traces of images.
+mode: sequential
 
 # [Mandatory] Target length. For sequential/sequential_positive_only is the length of each sample. For incremental is the number of tasks.
 #   Can be a fixed value (int), or a [min, max] pair (not for incremental mode). In the latter case, traces will have a random length between min and max.
@@ -12,11 +12,11 @@ length: 10 # [5, 10]
 
 # [Mandatory] Dataset splits. Each name is associated with a data path and the number of samples to generate. For sequence/sequence_positive_only, this corresponds to the total number of samples, for incremental, this is the number of samples for a single task.
 splits:
-  train: {path: "data/train", samples: 10}
+  train: {path: "data/train", samples: 80}
   val:   {path: "data/test", samples: 10}
   test:  {path: "data/test", samples: 10}
   test_ood: {path: "data/test", samples: 10} # Example for out-of-distribution experiment.
-  # domain_adaptation: {path: "data/domain_adaptation", samples: 10} # Another example.
+  # domain_adaptation: {path: "data/domain_adaptation", samples: 10} # Another example. It is possible to specify arbitrarily many splits.
 
 
 # [Optional] Prefix code for all the generated MiniZinc programs. It can contain included libraries, additional constraints, helper functions, etc.
@@ -24,9 +24,11 @@ minizinc_prefix: |
   include "all_equal.mzn";
 
 # [Mandatory] Predicate dictionary. It maps symbolic names (e.g. p, q) to MiniZinc constraints. Placeholders (e.g., A,B,C) will be syntactically replaced.
+#   This dictionary can also contain predicates which do not appear in the formula (orphan predicates). For these, variables CANNOT be placeholders and must be instead ground variables from the "domains" section.
 predicates:
   "p(A,B,C)": "A + B = C" # minizinc syntax. Variables here will be syntactically replaced with those from the formula.
-  "q(A,B,C)": "all_equal([A,B,C])"
+  "q(A,B,C)": "all_equal([A,B,C])" # "normal" predicate, A,B,C are placeholder variables which will be replaced according to the temporal formula.
+  # "r(X)": "X < 5" # This is an orphan predicate. X must be a ground variable appearing in the domain association.
 
 
 # [Mandatory] LTL formula. It must be specified in flloat (https://github.com/whitemech/flloat) syntax.
@@ -85,7 +87,7 @@ domains:
 
 # [Mandatory] Mapping between formula variables and image streams. This allows to multiplex variables at different time-steps.
 #   Streams can optionally be annotated with "modes". Input mode: "+" (default), Output mode: "-".
-#   These annotations do not affect the generation pipeline, but tell your agent which variables depend on the others.
+#   These annotations do not affect the generation pipeline, but can be used to tell your agent which variables depend on the others.
 streams: # In this example there is a 1-to-1 mapping between variables and streams. The agent sees 6 streams of images
   X: xx # Mapped to (img_xx, var_xx, direction: input) in csv annotations.
   Y: yy
@@ -106,27 +108,38 @@ streams: # In this example there is a 1-to-1 mapping between variables and strea
 # NOTE: The generator will raise an error if there is stream ambiguity at some time-step (e.g. if it encounters a state which depends both on the value of X and Z).
 
 
-# [Optional] Perform look-ahead and try to avoid being trapped into absorbing states (accepting or rejecting), and self loops.
+# [Optional] Perform look-ahead and try to avoid being trapped in sink states (accepting or rejecting), and self loops.
 #   If defined, all three strategies must be defined.
 #   False: next state will be uniformly sampled.
-#   True: next state will be uniformly sampled, after removing every accepting/rejecting absorbing state from the candidates.
+#   True: next state will be uniformly sampled, after removing every accepting/rejecting sink state from the candidates.
 #   linear: rate: let t be the number of times an accepting/rejecting absorbing state has been a potential successor so far, then sample absorbing states with probability rate * t, and every other state uniformly.
 #   exponential: rate: like the linear case, but absorbing states are sampled with 1 - e^(-rate * t) probability.
 avoid_states:
-  absorbing_accepting: False
-  absorbing_rejecting: { "exponential": 1e-3 }
+  accepting_sinks: False
+  rejecting_sinks: { "exponential": 1e-3 }
   self_loops: { "linear": 1e-1 }
 
 
 # [Optional] Upon entering an absorbing state, prematurely truncate the sequence (e.g., because new samples would be irrelevant for learning purposes).
-truncate_on_absorbing:
+truncate_on_sink:
   accepting: True
   rejecting: False
 
-# [Optional] Random seed for reproducibility.
-#   IMPORTANT: Due to a bug in the flloat library, a generated dataset will not be 100% reproducible,
-#   because multiple equivalent automata can be generated from the same formula during different executions, and it is not possible too deterministically fix one.
-seed: 12345
+# [Optional] In case of orphan predicates (predicates defined in "predicates", but not appearing in "formula"), force specific truth values to be observed along the sequence. Possible values: [positive, negative, both]
+guarantee_constraint_sampling: positive
 
-# [Optional] Patience hyper-parameter, for rejection sampling.
-patience: 1000
+# [Optional] The modality in which orphan predicates should appear. At each time step, at most ONE orphan will be selected, in a way in which the entire sequence overall satisfies one of the following criteria:
+#   strict_f: guarantee that eventually each orphan is encountered (behaves like a new formula: "old_formula & F p_0 & F p_1 & ... & F p_n", with p_i orphans, without incurring in an exponential blow-up).
+#   best_f: guarantee that eventually the largest number of orphans is encountered.
+#   strict_g: guarantee that in every time step, at least one orphan is encountered (behaves like "old_formula & G(p_0 | p_1 | ... | p_n)".
+#   best_g: guarantee that at least one orphan is encountered for as many time steps as possible.
+guarantee_mode: best_f
+
+# [Optional, incremental mode only] Frequency of samples in incremental mode which satisfy guarantee_mode. Can be "once" or a percentage (0.0 <= p <= 1.0).
+#   If "once", at least one sample (for each dataset split) will satisfy the chosen guarantee_mode, otherwise p * total will contain orphan guarantees and (1 - p) * total will be unconstrained.
+incremental_guarantee_ratio: once #"once" # ["once", p]
+
+# [Optional] Random seed for reproducibility. It can be an integer or a list of integers. In the latter case, multiple datasets will be generated with different random seeds (each in a subfolder of the path specified in the "splits" field).
+#   IMPORTANT: Due to a bug in the flloat library, a generated dataset will not be 100% reproducible,
+#   because multiple equivalent automata can be generated from the same formula during different executions, and it is not possible to deterministically fix one.
+seed: 12345 # [0, 12345, 67890, 88888]

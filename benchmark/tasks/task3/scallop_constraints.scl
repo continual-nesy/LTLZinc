@@ -1,8 +1,0 @@
-type var_x(u8), var_y(u8), var_z(u8)
-type p_0(), p_1()
-
-
-rel p_0() = var_x(x), var_y(y), var_z(z), x != y, y != z, x != z
-rel p_1() = var_x(x), var_y(y), var_z(z), x < y + z
-
-

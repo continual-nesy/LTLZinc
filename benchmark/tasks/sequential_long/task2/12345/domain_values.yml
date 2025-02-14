@@ -1,0 +1,123 @@
+test:
+  V:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  W:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  X:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  Y:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  Z:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+train:
+  V:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  W:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  X:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  Y:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  Z:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+val:
+  V:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  W:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  X:
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  Y:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser
+  Z:
+  - bag
+  - boot
+  - coat
+  - dress
+  - pullover
+  - sandal
+  - shirt
+  - sneaker
+  - top
+  - trouser

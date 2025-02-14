@@ -1,0 +1,40 @@
+p_0:
+  constraint: X in {0, 1, 2}
+  orphan: false
+  predicate: p
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X
+p_1:
+  constraint: X in {3, 4, 5}
+  orphan: false
+  predicate: q
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X
+p_2:
+  constraint: X in {6, 7, 8}
+  orphan: true
+  predicate: r
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X
+p_3:
+  constraint: X = 9
+  orphan: true
+  predicate: s
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X

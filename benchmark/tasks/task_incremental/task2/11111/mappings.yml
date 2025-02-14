@@ -1,0 +1,207 @@
+p_0:
+  constraint: (bool2int(X in animals) + bool2int(Y in animals) + bool2int(Z in animals)
+    = 3)
+  orphan: false
+  predicate: allanimals
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_1:
+  constraint: (bool2int(X in animals) + bool2int(Y in animals) + bool2int(Z in animals)
+    = 1)
+  orphan: false
+  predicate: oneanimal
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_10:
+  constraint: all_different([X, Y, Z])
+  orphan: true
+  predicate: alldifferent
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_2:
+  constraint: (bool2int(X in animals) + bool2int(Y in animals) + bool2int(Z in animals)
+    = 2)
+  orphan: false
+  predicate: twoanimals
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_3:
+  constraint: (bool2int(X in plants) + bool2int(Y in plants) + bool2int(Z in plants)
+    = 1)
+  orphan: true
+  predicate: oneplant
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_4:
+  constraint: (bool2int(X in plants) + bool2int(Y in plants) + bool2int(Z in plants)
+    = 2)
+  orphan: true
+  predicate: twoplants
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_5:
+  constraint: (bool2int(X in plants) + bool2int(Y in plants) + bool2int(Z in plants)
+    = 3)
+  orphan: true
+  predicate: allplants
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_6:
+  constraint: (bool2int(X in inanimate) + bool2int(Y in inanimate) + bool2int(Z in
+    inanimate) = 1)
+  orphan: true
+  predicate: oneinanimate
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_7:
+  constraint: (bool2int(X in inanimate) + bool2int(Y in inanimate) + bool2int(Z in
+    inanimate) = 2)
+  orphan: true
+  predicate: twoinanimate
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_8:
+  constraint: (bool2int(X in inanimate) + bool2int(Y in inanimate) + bool2int(Z in
+    inanimate) = 3)
+  orphan: true
+  predicate: allinanimate
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z
+p_9:
+  constraint: all_equal([X, Y, Z])
+  orphan: true
+  predicate: allequal
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    X: X
+    Y: Y
+    Z: Z

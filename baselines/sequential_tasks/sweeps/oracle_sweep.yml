@@ -46,7 +46,7 @@ parameters:
   constraint_module:
     values:
       - mlp:8
-      - scallop:difftopkproofs:1:1
+      #- scallop:difftopkproofs:1:1
   dfa_module:
     values:
       - fuzzy:prob
@@ -58,15 +58,15 @@ parameters:
   pretraining_epochs:
     values:
       - 0
-      - 5
+      #- 5
   supervision_lambda:
     values:
-     - 0.0
+     #- 0.0
      - 0.1
   constraint_lambda:
     values:
       - 0.0
-      - 1.0
+      #- 1.0
   successor_lambda:
     value: 1.0
   use_random_samples:
@@ -82,14 +82,14 @@ parameters:
   use_label_oracle:
     values:
       - False
-      - True
+      #- True
   use_constraint_oracle:
     values:
-      - False
+      #- False
       - True
   oracle_noise:
     values:
-      - 0.0
+      #- 0.0
       - 0.05
       - 0.1
       - 0.2

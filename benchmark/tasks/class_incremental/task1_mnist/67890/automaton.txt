@@ -1,0 +1,12 @@
+States: {1, 2, 0, 3}
+Initial state: 0
+Accepting states: {1}
+
+Transitions:
+[0->2]	~p_0
+[0->3]	p_0
+[1->1]	~p_0
+[1->3]	p_0
+[2->1]	p_0
+[2->2]	~p_0
+[3->3]	True

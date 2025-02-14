@@ -1,0 +1,36 @@
+p_0:
+  constraint: all_different([A,B,C])
+  orphan: false
+  predicate: p
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    A: X
+    B: Y
+    C: Z
+p_1:
+  constraint: A < B + C
+  orphan: false
+  predicate: q
+  streams:
+    X:
+      direction: input
+      name: x
+    Y:
+      direction: input
+      name: y
+    Z:
+      direction: input
+      name: z
+  substitutions:
+    A: X
+    B: Y
+    C: Z

@@ -102,7 +102,9 @@ class StateSampler:
 
             # Solve the problem and cache all the solutions, in case the same transition is encountered again in the future.
             result = instance.solve(all_solutions=True)
-            assert result.status.has_solution(), "The following problem has no solution:\n{}".format(model._code_fragments)
+            if not result.status.has_solution():
+                raise RuntimeError("The following problem has no solution:\n{}".format(model._code_fragments))
+
             self.solution_cache[cache_key] = result.solution # Memoization of solutions, to avoid recomputing them.
 
         rnd_sol = self.rng.choice(self.solution_cache[cache_key], size=solutions)

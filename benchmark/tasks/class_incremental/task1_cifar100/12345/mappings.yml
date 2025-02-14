@@ -1,0 +1,34 @@
+p_0:
+  constraint: X in flowers union fruit_and_vegetables union trees
+  orphan: false
+  predicate: plants
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X
+p_1:
+  constraint: X in acquatic_mammals union fish union insects union large_carnivores
+    union large_omnivores_and_herbivores union medium_sized_mammals union non_insect_invertebrates
+    union people union reptiles union small_mammals
+  orphan: true
+  predicate: animals
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X
+p_2:
+  constraint: X in food_containers union household_electrical_devices union household_furniture
+    union large_manmade_outdoors_things union large_natural_outdoors_scenes union
+    vehicles_1 union vehicles_2
+  orphan: true
+  predicate: inanimate
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X

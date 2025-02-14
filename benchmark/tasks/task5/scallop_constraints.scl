@@ -1,7 +1,0 @@
-type var_w(u8), var_x(u8), var_y(u8), var_z(u8)
-type p_0()
-
-
-rel p_0() = var_w(w), var_x(x), var_y(y), var_z(z), w + x == y + z
-
-

@@ -1,0 +1,176 @@
+mode: incremental
+
+length: 50
+
+splits:
+  train: {path: "data/train", samples: 800}
+  val:   {path: "data/train", samples: 100}
+  test:  {path: "data/test", samples: 100}
+
+minizinc_prefix: |
+  include "all_equal.mzn";
+  include "all_different.mzn";
+  
+  set of cifar100_t: acquatic_mammals = {beaver, dolphin, otter, seal, whale};
+  set of cifar100_t: fish = {aquarium_fish, flatfish, ray, shark, trout};
+  set of cifar100_t: flowers = {orchid, poppy, rose, sunflower, tulip};
+  set of cifar100_t: food_containers = {bottle, bowl, can, cup, plate};
+  set of cifar100_t: fruit_and_vegetables = {apple, mushroom, orange, pear, sweet_pepper};
+  set of cifar100_t: household_electrical_devices = {clock, keyboard, lamp, telephone, television};
+  set of cifar100_t: household_furniture = {bed, chair, couch, table, wardrobe};
+  set of cifar100_t: insects = {bee, beetle, butterfly, caterpillar, cockroach};
+  set of cifar100_t: large_carnivores = {bear, leopard, lion, tiger, wolf};
+  set of cifar100_t: large_manmade_outdoors_things = {bridge, castle, house, road, skyscraper};
+  set of cifar100_t: large_natural_outdoors_scenes = {cloud, forest, mountain, plain, sea};
+  set of cifar100_t: large_omnivores_and_herbivores = {camel, cattle, chimpanzee, elephant, kangaroo};
+  set of cifar100_t: medium_sized_mammals = {fox, porcupine, possum, raccoon, skunk};
+  set of cifar100_t: non_insect_invertebrates = {crab, lobster, snail, spider, worm};
+  set of cifar100_t: people = {baby, boy, girl, man, woman};
+  set of cifar100_t: reptiles = {crocodile, dinosaur, lizard, snake, turtle};
+  set of cifar100_t: small_mammals = {hamster, mouse, rabbit, shrew, squirrel};
+  set of cifar100_t: trees = {maple_tree, oak_tree, palm_tree, pine_tree, willow_tree};
+  set of cifar100_t: vehicles_1 = {bicycle, bus, motorcycle, pickup_truck, train};
+  set of cifar100_t: vehicles_2 = {lawn_mower, rocket, streetcar, tank, tractor};
+  
+  set of cifar100_t: animals = acquatic_mammals union fish union insects union large_carnivores union large_omnivores_and_herbivores union medium_sized_mammals union non_insect_invertebrates union people union reptiles union small_mammals;
+  set of cifar100_t: plants = flowers union fruit_and_vegetables union trees;
+  set of cifar100_t: inanimate = food_containers union household_electrical_devices union household_furniture union large_manmade_outdoors_things union large_natural_outdoors_scenes union vehicles_1 union vehicles_2;
+  
+
+predicates:
+  "oneanimal(X,Y,Z)": "(bool2int(X in animals) + bool2int(Y in animals) + bool2int(Z in animals) = 1)"
+  "twoanimals(X,Y,Z)": "(bool2int(X in animals) + bool2int(Y in animals) + bool2int(Z in animals) = 2)"
+  "allanimals(X,Y,Z)": "(bool2int(X in animals) + bool2int(Y in animals) + bool2int(Z in animals) = 3)"
+
+  "oneplant(X,Y,Z)": "(bool2int(X in plants) + bool2int(Y in plants) + bool2int(Z in plants) = 1)"
+  "twoplants(X,Y,Z)": "(bool2int(X in plants) + bool2int(Y in plants) + bool2int(Z in plants) = 2)"
+  "allplants(X,Y,Z)": "(bool2int(X in plants) + bool2int(Y in plants) + bool2int(Z in plants) = 3)"
+
+  "oneinanimate(X,Y,Z)": "(bool2int(X in inanimate) + bool2int(Y in inanimate) + bool2int(Z in inanimate) = 1)"
+  "twoinanimate(X,Y,Z)": "(bool2int(X in inanimate) + bool2int(Y in inanimate) + bool2int(Z in inanimate) = 2)"
+  "allinanimate(X,Y,Z)": "(bool2int(X in inanimate) + bool2int(Y in inanimate) + bool2int(Z in inanimate) = 3)"
+
+  "allequal(X,Y,Z)": "all_equal([X, Y, Z])"
+  "alldifferent(X,Y,Z)": "all_different([X, Y, Z])"
+
+
+formula: "(F allanimals(X,Y,Z)) & G(allanimals(X,Y,Z) <-> WX twoanimals(X,Y,Z)  & WX WX oneanimal(X,Y,Z))"
+
+types:
+  cifar100_t:
+    apple: "cifar100/apple"
+    aquarium_fish: "cifar100/aquarium_fish"
+    baby: "cifar100/baby"
+    bear: "cifar100/bear"
+    beaver: "cifar100/beaver"
+    bed: "cifar100/bed"
+    bee: "cifar100/bee"
+    beetle: "cifar100/beetle"
+    bicycle: "cifar100/bicycle"
+    bottle: "cifar100/bottle"
+    bowl: "cifar100/bowl"
+    boy: "cifar100/boy"
+    bridge: "cifar100/bridge"
+    bus: "cifar100/bus"
+    butterfly: "cifar100/butterfly"
+    camel: "cifar100/camel"
+    can: "cifar100/can"
+    castle: "cifar100/castle"
+    caterpillar: "cifar100/caterpillar"
+    cattle: "cifar100/cattle"
+    chair: "cifar100/chair"
+    chimpanzee: "cifar100/chimpanzee"
+    clock: "cifar100/clock"
+    cloud: "cifar100/cloud"
+    cockroach: "cifar100/cockroach"
+    couch: "cifar100/couch"
+    crab: "cifar100/crab"
+    crocodile: "cifar100/crocodile"
+    cup: "cifar100/cup"
+    dinosaur: "cifar100/dinosaur"
+    dolphin: "cifar100/dolphin"
+    elephant: "cifar100/elephant"
+    flatfish: "cifar100/flatfish"
+    forest: "cifar100/forest"
+    fox: "cifar100/fox"
+    girl: "cifar100/girl"
+    hamster: "cifar100/hamster"
+    house: "cifar100/house"
+    kangaroo: "cifar100/kangaroo"
+    keyboard: "cifar100/keyboard"
+    lamp: "cifar100/lamp"
+    lawn_mower: "cifar100/lawn_mower"
+    leopard: "cifar100/leopard"
+    lion: "cifar100/lion"
+    lizard: "cifar100/lizard"
+    lobster: "cifar100/lobster"
+    man: "cifar100/man"
+    maple_tree: "cifar100/maple_tree"
+    motorcycle: "cifar100/motorcycle"
+    mountain: "cifar100/mountain"
+    mouse: "cifar100/mouse"
+    mushroom: "cifar100/mushroom"
+    oak_tree: "cifar100/oak_tree"
+    orange: "cifar100/orange"
+    orchid: "cifar100/orchid"
+    otter: "cifar100/otter"
+    palm_tree: "cifar100/palm_tree"
+    pear: "cifar100/pear"
+    pickup_truck: "cifar100/pickup_truck"
+    pine_tree: "cifar100/pine_tree"
+    plain: "cifar100/plain"
+    plate: "cifar100/plate"
+    poppy: "cifar100/poppy"
+    porcupine: "cifar100/porcupine"
+    possum: "cifar100/possum"
+    rabbit: "cifar100/rabbit"
+    raccoon: "cifar100/raccoon"
+    ray: "cifar100/ray"
+    road: "cifar100/road"
+    rocket: "cifar100/rocket"
+    rose: "cifar100/rose"
+    sea: "cifar100/sea"
+    seal: "cifar100/seal"
+    shark: "cifar100/shark"
+    shrew: "cifar100/shrew"
+    skunk: "cifar100/skunk"
+    skyscraper: "cifar100/skyscraper"
+    snail: "cifar100/snail"
+    snake: "cifar100/snake"
+    spider: "cifar100/spider"
+    squirrel: "cifar100/squirrel"
+    streetcar: "cifar100/streetcar"
+    sunflower: "cifar100/sunflower"
+    sweet_pepper: "cifar100/sweet_pepper"
+    table: "cifar100/table"
+    tank: "cifar100/tank"
+    telephone: "cifar100/telephone"
+    television: "cifar100/television"
+    tiger: "cifar100/tiger"
+    tractor: "cifar100/tractor"
+    train: "cifar100/train"
+    trout: "cifar100/trout"
+    tulip: "cifar100/tulip"
+    turtle: "cifar100/turtle"
+    wardrobe: "cifar100/wardrobe"
+    whale: "cifar100/whale"
+    willow_tree: "cifar100/willow_tree"
+    wolf: "cifar100/wolf"
+    woman: "cifar100/woman"
+    worm: "cifar100/worm"
+
+domains:
+  X: cifar100_t
+  Y: cifar100_t
+  Z: cifar100_t
+
+streams:
+  X: +x
+  Y: +y
+  Z: +z
+
+guarantee_constraint_sampling: positive
+guarantee_mode: strict_f
+incremental_guarantee_ratio: 0.2
+
+seed: [0, 12345, 67890, 88888, 66666, 11111]

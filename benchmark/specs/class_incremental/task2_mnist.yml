@@ -1,0 +1,45 @@
+mode: incremental
+
+length: 20
+
+splits:
+  train: {path: "data/train", samples: 800}
+  val:   {path: "data/train", samples: 100}
+  test:  {path: "data/test", samples: 100}
+
+minizinc_prefix: ""
+
+predicates:
+  "p(X)": "X in {0, 1, 2}"
+  "q(X)": "X in {3, 4, 5}"
+  "r(X)": "X in {6, 7, 8}"
+  "s(X)": "X = 9"
+
+
+formula: "G(p(X) <-> (X !q(X) & X WX q(X)))"
+
+
+types:
+  mnist_t:
+    0: "mnist/0"
+    1: "mnist/1"
+    2: "mnist/2"
+    3: "mnist/3"
+    4: "mnist/4"
+    5: "mnist/5"
+    6: "mnist/6"
+    7: "mnist/7"
+    8: "mnist/8"
+    9: "mnist/9"
+
+domains:
+  X: mnist_t
+
+streams:
+  X: +x
+
+guarantee_constraint_sampling: positive
+guarantee_mode: best_f
+incremental_guarantee_ratio: 0.5
+
+seed: [0, 12345, 67890, 88888, 66666, 11111]

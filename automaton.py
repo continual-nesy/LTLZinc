@@ -1,4 +1,6 @@
 import re
+
+import sympy.logic.boolalg
 from flloat.parser.ltlf import LTLfParser
 import numpy as np
 
@@ -7,12 +9,15 @@ class LTLAutomaton:
     Automaton class. It builds a deterministic finite state automaton from an LTLf formula and samples traces from it,
     while keeping track of data streams.
     """
-    def __init__(self, ltl, pred_dict, streams, avoid_policy, truncate_on_absorbing, rng, patience):
+    def __init__(self, ltl, pred_dict, streams, avoid_policy, truncate_on_sink, constraint_sampling, rng, silent=True):
         self.avoid_policy = avoid_policy
         self.rng = rng
-        self.patience = patience
         self.streams = streams
-        self.truncate_on_absorbing = truncate_on_absorbing
+        self.truncate_on_sink = truncate_on_sink
+        self.constraint_sampling = constraint_sampling
+        self.silent = silent
+
+        assert self.constraint_sampling in [True, False, "positive", "negative"]
 
         self.inverse_streams = {}
 
@@ -22,6 +27,8 @@ class LTLAutomaton:
                 self.inverse_streams[vv] = []
             self.inverse_streams[vv].append(k)
 
+        if not self.silent:
+            print("Building formula...")
         self._build_formula(ltl, pred_dict)
         self._build_automaton()
 
@@ -42,6 +49,8 @@ class LTLAutomaton:
         self.mapping = {}
         self.formula = ltl
 
+        encountered_preds = set()
+
         for pred in extracted_preds:
             name = pred.split("(")[0]
             arity = pred.count(",") + 1
@@ -55,7 +64,6 @@ class LTLAutomaton:
                 if name == pred_name and arity == pred_arity:
                     found = True
                     subs = {v["terms"][j]: tmp[j] for j in range(len(tmp))}
-                    #chans = {k: self.streams[k] for k in tmp}
                     chans = {}
                     for k in tmp:
                         if self.streams[k].startswith("-"):
@@ -69,11 +77,40 @@ class LTLAutomaton:
                     self.mapping[propositional_name] = {
                         "predicate": pred_name, "substitutions": subs,
                         "streams": chans,
-                        "constraint": v["constraint"]
+                        "constraint": v["constraint"],
+                        "orphan": False
                     }
                     self.formula = self.formula.replace(pred, propositional_name)
+                    encountered_preds.add(name)
             assert found, "Predicate {} appears in formula, but not in predicate list.".format(pred)
             i += 1
+
+        # Adding orphan predicates (appearing in predicate list, but not in the ltl formula).
+        for p, v in pred_dict.items():
+            name = p.split("(")[0]
+            if name not in encountered_preds:
+                propositional_name = "p_{}".format(i)
+                tmp = re.sub(r'\s', '', p).split("(")[1].split(")")[0].split(",")
+                subs = {v["terms"][j]: tmp[j] for j in range(len(tmp))}
+
+                chans = {}
+                for k in tmp:
+                    if self.streams[k].startswith("-"):
+                        chans[k] = {"name": self.streams[k][1:], "direction": "output"}
+                    elif self.streams[k].startswith("+"):
+                        chans[k] = {"name": self.streams[k][1:], "direction": "input"}
+                    else:
+                        chans[k] = {"name": self.streams[k], "direction": "input"}
+
+                self.mapping[propositional_name] = {
+                    "predicate": name, "substitutions": subs,
+                    "streams": chans,
+                    "constraint": v["constraint"],
+                    "orphan": True
+                }
+
+                i += 1
+
 
     def _build_automaton(self):
         """
@@ -83,7 +120,14 @@ class LTLAutomaton:
         """
         parser = LTLfParser()
 
-        self.dfa = parser(self.formula).to_nnf().to_automaton()
+        if not self.silent:
+            print("Converting to nnf...")
+        nnf = parser(self.formula).to_nnf()
+        if not self.silent:
+            print("Building automaton...")
+        self.dfa = nnf.to_automaton()
+        self._identify_special_states()
+
 
         assert len(self.dfa.accepting_states) > 0, "The formula is unsatisfiable."
 
@@ -120,36 +164,105 @@ class LTLAutomaton:
 
         return str_automaton, dict_automaton, self.mapping
 
-    # Compute the sampling probability for absorbing states.
-    def _get_probs(self, t, state_type):
+    # Compute the sampling probability for loop states.
+    def _decay_probs(self, t, state_type):
         if self.avoid_policy[state_type][0] == "linear":
             return min(1.0, (t+1) * self.avoid_policy[state_type][1])
         else:
             return 1. - np.exp(-(t+1) * self.avoid_policy[state_type][1])
 
-    def _identify_avoidable_states(self, cur_state):
-        """
-        Perform look-ahead search for absorbing next states.
-        :param cur_state: The current state.
-        :return: Tuple (set of next states which are absorbing and accepting, set of next states which are absorbing and non-accepting, set of next states which are self-loops).
-        """
-        next_acc_abs = set()
-        next_rej_abs = set()
-        next_loops = set()
+    def _identify_special_states(self):
+        self.loop_states = set() #  Loops with guard != True.
+        self.accepting_sinks = set() # Loops with guard == True and in accepting.
+        self.rejecting_sinks = set() # Loops with guard == True and not in accepting.
 
-        for next_state, formula1 in self.dfa._transition_function[cur_state].items():
-            if cur_state == next_state and str(formula1) != "True":
-                next_loops.add(next_state)
-            for next_next, formula2 in self.dfa._transition_function[next_state].items(): # The transition of the successor.
-                if str(formula2) == "True" and next_next == next_state: # If it is both a self-loop and has true guard, it is absorbing.
-                    if next_next in self.dfa.accepting_states:
-                        next_acc_abs.add(next_state)
+        self.constraints = set()
+
+        for cs, v in  self.dfa._transition_function.items():
+            for ns, f in v.items():
+                if cs == ns:
+                    if str(f) != "True":
+                        self.loop_states.add(cs)
+                    elif cs in self.dfa.accepting_states:
+                        self.accepting_sinks.add(cs)
                     else:
-                        next_rej_abs.add(next_state)
+                        self.rejecting_sinks.add(cs)
 
-        return next_acc_abs, next_rej_abs, next_loops
+    def _compute_probs(self, succs, stats):
+        probs = []
+        for s in succs:
+            if s in self.loop_states:
+                probs.append(self._decay_probs(stats["self_loops"], "self_loops"))
+                stats["self_loops"] += 1
+            elif s in self.accepting_sinks:
+                probs.append(self._decay_probs(stats["accepting_sinks"], "accepting_sinks"))
+                stats["accepting_sinks"] += 1
+            elif s in self.rejecting_sinks:
+                probs.append(self._decay_probs(stats["rejecting_sinks"], "rejecting_sinks"))
+                stats["rejecting_sinks"] += 1
+            else:
+                probs.append(1.0)
 
-    def generate_sequence(self, steps):
+        # In the end probabilities are normalized.
+        if np.sum(probs) > 0:
+            probs = np.array(probs) / np.sum(probs)
+        else:  # All probabilities are 0 (e.g. because every next_state is absorbing and the policy gives 0 probability): force them to 1/n.
+            probs = np.ones_like(probs) / len(probs)
+
+        return probs
+
+    def _ldfs(self, cur_state, target_type, stats, max_depth=0, pos_constraints=None, neg_constraints=None):
+        assert target_type in ["accepting", "rejecting", "any"]
+        ok = target_type == "any"
+        ok |= target_type == "accepting" and cur_state in self.dfa.accepting_states
+        ok |= target_type == "rejecting" and cur_state not in self.dfa.accepting_states
+
+
+        if self.constraint_sampling != False:
+            if pos_constraints is None:
+                pos_constraints = set()
+            if neg_constraints is None:
+                neg_constraints = set()
+
+            if self.constraint_sampling == True or self.constraint_sampling == "positive":
+                ok &= not pos_constraints.isdisjoint([str(k) for k in self.mapping.keys() if not self.mapping[k]["orphan"]])
+            if self.constraint_sampling == True or self.constraint_sampling == "negative":
+                ok &= not neg_constraints.isdisjoint([str(k) for k in self.mapping.keys() if not self.mapping[k]["orphan"]])
+
+        if max_depth == 0:
+            return [cur_state], ok
+        elif cur_state in self.accepting_sinks:
+            postfix_length = 1 if self.truncate_on_sink["accepting"] else max_depth
+            return [cur_state] * postfix_length, ok
+        elif cur_state in self.rejecting_sinks:
+            postfix_length = 1 if self.truncate_on_sink["rejecting"] else max_depth
+            return [cur_state] * postfix_length, ok
+        else:  # Recursive case.
+            succs = sorted(self.dfa._transition_function[cur_state].keys())
+            while len(succs) > 0: # Either returns inside the loop or continues until no successor is found.
+                probs = self._compute_probs(succs, stats)
+                next_state = self.rng.choice(succs, p=probs)
+                if self.constraint_sampling != False:
+                    formula = self.dfa._transition_function[cur_state][next_state]
+                    atoms = formula.atoms()
+
+                    for a in atoms:
+                        if formula.count(sympy.logic.boolalg.Not(a)) > 0:
+                            neg_constraints.add(str(a))
+                        elif formula.count(a) > 0:
+                            pos_constraints.add(str(a))
+
+                tail, ok = self._ldfs(next_state, target_type, stats, max_depth - 1, pos_constraints, neg_constraints)
+
+                if ok:
+                    return [cur_state] + tail, ok
+                else:
+                    succs.remove(next_state)
+            if len(succs) == 0:
+                return [], False # Search failed. No path from cur_state satisfies target_type.
+
+
+    def generate_sequence(self, steps, target_type="any"):
         """
         Randomly traverse the automaton to generate a trace.
         :param steps: The number of steps to walk.
@@ -157,61 +270,38 @@ class LTLAutomaton:
         """
         assert isinstance(steps, int) or len(steps) == 2, \
             "Steps must be an int or a tuple (min, max), found {}.".format(steps)
-        cur_state = self.dfa.initial_state
+        assert target_type in ["accepting", "rejecting", "any"], \
+            "Sequence type must be one of ['accepting', 'rejecting', 'any'], found {}.".format(target_type)
+
+        min_steps = steps[0]
+        ok = False
+        while not ok and min_steps <= steps[1]:
+            seq_len = self.rng.integers(min_steps, steps[1] + 1)
+
+            stats = {"self_loops": 0, "accepting_sinks": 0,  "rejecting_sinks": 0}
+            state_trace, ok = self._ldfs(self.dfa.initial_state, target_type, stats, max_depth=seq_len)
+
+            if not ok: # If there is no trace of length seq_len which satisfies the target type, increase the sequence length and retry.
+                min_steps = seq_len + 1
+
+        # If a maximum-length sequence (steps[1]) still cannot satisfy the target type, it is an unrecoverable error.
+        # Note that for incremental mode, steps[0] = steps[1], therefore the loop will terminate in one cycle.
+        assert ok, "No trace in the automaton ends in a {} state.".format(target_type)
+
         formula_trace = []
         transition_trace = []
-        cur_streams = []
-        seq_len = self.rng.integers(steps[0], steps[1] + 1)
+        stream_trace = []
 
-        abs_acc = 0 # increased every time an absorbing accepting state is a possible next state
-        abs_rej = 0 # increased every time an absorbing rejecting state is a possible next state
+        for i in range(len(state_trace) - 1):
+            cs = state_trace[i]
+            ns = state_trace[i + 1]
+            t = self.dfa._transition_function[cs][ns]
 
-        for i in range(seq_len):
-            next_acc_abs, next_rej_abs, next_self_loops = self._identify_avoidable_states(cur_state)
-            next_non_abs = {s for s in self.dfa._transition_function[cur_state].keys() if s not in next_acc_abs and s not in next_rej_abs and s not in next_self_loops}
-
-            if len(next_acc_abs) > 0:
-                abs_acc += 1
-            if len(next_rej_abs) > 0:
-                abs_rej += 1
-
-            next_states = []
-            probs = []
-            acc_mass = self._get_probs(abs_acc, "absorbing_accepting")
-
-            # Biases next state selection, based on absorbing states avoidance policy.
-            for s in sorted(next_acc_abs):
-                next_states.append(s)
-                probs.append(acc_mass)
-
-            rej_mass = self._get_probs(abs_rej, "absorbing_rejecting")
-            for s in sorted(next_rej_abs):
-                next_states.append(s)
-                probs.append(rej_mass)
-
-            loop_mass = self._get_probs(abs_rej, "self_loops")
-            for s in sorted(next_self_loops):
-                next_states.append(s)
-                probs.append(loop_mass)
-
-            for s in sorted(next_non_abs):
-                next_states.append(s)
-                probs.append(1.0)
-
-            # In the end probabilities are normalized.
-            if np.sum(probs) > 0:
-                probs = np.array(probs) / np.sum(probs)
-            else: # All probabilities are 0 (e.g. because every next_state is absorbing and the policy gives 0 probability): force them to 1/n.
-                probs = np.ones_like(probs) / len(probs)
-
-            next_state = self.rng.choice(next_states, p=probs)
-            transition = self.dfa._transition_function[cur_state][next_state]
-
-            formula_trace.append(transition)
-            transition_trace.append("{}->{}".format(cur_state, next_state))
+            formula_trace.append(t)
+            transition_trace.append("{}->{}".format(cs, ns))
 
             tmp = {}
-            for symb in transition.free_symbols:
+            for symb in t.free_symbols:
                 for k, v in self.mapping[str(symb)]["streams"].items():
                     if k in tmp:
                         assert tmp[k] == v["name"], \
@@ -222,55 +312,18 @@ class LTLAutomaton:
 
                     tmp[k] = v["name"]
 
-
             # Fill don't care streams with random values.
             for missing_stream in sorted(set(self.inverse_streams.keys()).difference(tmp.values())):
                 v = self.rng.choice(self.inverse_streams[missing_stream])
                 tmp[v] = "({})".format(missing_stream)
 
-            cur_state = next_state
-            cur_streams.append(tmp)
+            stream_trace.append(tmp)
 
-            # Entered an absorbing state. Prematurely truncating the sequence if necessary.
-            if str(transition) == "True" and self.truncate_on_absorbing["accepting" if next_state in next_acc_abs else "rejecting"]:
-                break
 
-        return formula_trace, transition_trace, cur_state in self.dfa.accepting_states, cur_streams
+        return formula_trace, transition_trace, state_trace[-1] in self.dfa.accepting_states, stream_trace
 
-    def generate_accepting_sequence(self, steps):
-        """
-        # Rejection sampling of a single accepting sequence. Give up after self.patience failed attempts.
-        :param steps: Length of the target sequence.
-        :return:
-        """
-        for attempts in range(self.patience):
-            formula_trace, transition_trace, accepting, cur_streams = self.generate_sequence(steps)
-            if accepting:
-                break
 
-        assert attempts < self.patience - 1, "Ran out of patience while generating an accepting sequence." # This is an error because the method should always return accepting sequences.
-
-        return formula_trace, transition_trace, cur_streams
-
-    def generate_accepting_sequences(self, steps, num_sequences):
-        """
-        # Generate multiple accepting sequences.
-        :param steps: Length of target sequences.
-        :param num_sequences: Number of sequences to generate.
-        :return:
-        """
-        traces = []
-        transitions = []
-        cur_streams = []
-        for _ in range(num_sequences):
-            trace, transition_trace, cur_chan = self.generate_accepting_sequence(steps)
-            traces.append(trace)
-            transitions.append(transition_trace)
-            cur_streams.append(cur_chan)
-
-        return traces, transitions, cur_streams
-
-    def generate_sequences(self, steps, num_sequences, balance=False):
+    def generate_sequences(self, steps, num_sequences, positive_only=False, balance=False):
         """
         Generate multiple sequences.
         :param steps:  Length of target sequences.
@@ -278,28 +331,25 @@ class LTLAutomaton:
         :param balance: If True, try to guarantee a balanced dataset. Give up after self.patience attempts (after that point sequences will no longer be balanced).
         :return:
         """
-        pos_traces = 0
-        neg_traces = 0
-        traces = []
-        transitions = []
-        labels = []
-        stream_seq = []
 
-        attempts = 0
-        while len(traces) < num_sequences:
+        formula_traces = []
+        transition_traces = []
+        label_traces = []
+        stream_traces = []
 
-            trace, transition_trace, accepting, cur_streams = self.generate_sequence(steps)
-            # Allow a difference of 1 if the requested number of sequences is odd.
-            if balance and abs(pos_traces - neg_traces) > num_sequences % 2:
-                select_positive = pos_traces < neg_traces
-                while attempts < self.patience and accepting != select_positive:
-                    trace, transition_trace, accepting, cur_streams = self.generate_sequence(steps)
-                    attempts += 1
+        for i in range(num_sequences):
+            if positive_only:
+                f, t, l, s = self.generate_sequence(steps, "accepting")
+            elif balance:
+                f, t, l, s = self.generate_sequence(steps, "accepting" if i % 2 == 0 else "rejecting")
+            else:
+                f, t, l, s = self.generate_sequence(steps, "any")
 
-            pos_traces += 1 if accepting else 0
-            neg_traces += 1 if not accepting else 0
-            traces.append(trace)
-            transitions.append(transition_trace)
-            labels.append(accepting)
-            stream_seq.append(cur_streams)
-        return traces, transitions, labels, stream_seq
+            formula_traces.append(f)
+            transition_traces.append(t)
+            label_traces.append(l)
+            stream_traces.append(s)
+
+        idx = list(range(num_sequences))
+        self.rng.shuffle(idx)
+        return [formula_traces[i] for i in idx], [transition_traces[i] for i in idx], [label_traces[i] for i in idx], [stream_traces[i] for i in idx]

@@ -1,0 +1,30 @@
+p_0:
+  constraint: X = 0
+  orphan: false
+  predicate: zero
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X
+p_1:
+  constraint: X in {2, 4, 6, 8}
+  orphan: true
+  predicate: even
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X
+p_2:
+  constraint: X in {1, 3, 5, 7}
+  orphan: true
+  predicate: odd
+  streams:
+    X:
+      direction: input
+      name: x
+  substitutions:
+    X: X

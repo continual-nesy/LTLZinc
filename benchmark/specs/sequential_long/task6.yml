@@ -1,0 +1,49 @@
+mode: sequential
+
+length: [50, 100]
+
+splits:
+  train: {path: "data/train", samples: 320}
+  val:   {path: "data/train", samples: 40}
+  test:  {path: "data/test", samples: 40}
+minizinc_prefix: ""
+
+predicates:
+  "p(A,B, C)": "A + B = C"
+  "q(A,B,C)": "A + B = 2 * C"
+
+formula: "G (p(X,Y,Z) <-> X q(X,Y,Z) )"
+
+types:
+  mnist_t:
+    0: "mnist/0"
+    1: "mnist/1"
+    2: "mnist/2"
+    3: "mnist/3"
+    4: "mnist/4"
+    5: "mnist/5"
+    6: "mnist/6"
+    7: "mnist/7"
+    8: "mnist/8"
+    9: "mnist/9"
+
+domains:
+  X: mnist_t
+  Y: mnist_t
+  Z: mnist_t
+
+streams:
+  X: +x
+  Y: +y
+  Z: -z
+
+avoid_states:
+  accepting_sinks: { "linear": 0.01 }
+  rejecting_sinks: { "linear": 0.01 }
+  self_loops: { "linear": 0.1 }
+
+truncate_on_sinks:
+  accepting: False
+  rejecting: False
+
+seed: 12345

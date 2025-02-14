@@ -1,0 +1,66 @@
+mode: sequential
+
+length: [50, 100]
+
+splits:
+  train: {path: "data/train", samples: 320}
+  val:   {path: "data/train", samples: 40}
+  test:  {path: "data/test", samples: 40}
+
+
+minizinc_prefix: |
+  include "all_different.mzn";
+
+predicates:
+  "p(A,B,C)": "all_different([A,B,C])"
+  "q(A,B,C)": "A < B + C"
+
+formula: "F p(X,Y,Z) & q(X,Y,Z) U X p(X,Y,Z)"
+
+types:
+  fmnist_t:
+    bag: "fmnist/bag"
+    boot: "fmnist/boot"
+    coat: "fmnist/coat"
+    dress: "fmnist/dress"
+    pullover: "fmnist/pullover"
+    sandal: "fmnist/sandal"
+    shirt: "fmnist/shirt"
+    sneaker: "fmnist/sneaker"
+    top: "fmnist/top"
+    trouser: "fmnist/trouser"
+  mnist_t:
+    bag: "mnist/0"
+    boot: "mnist/1"
+    coat: "mnist/2"
+    dress: "mnist/3"
+    pullover: "mnist/4"
+    sandal: "mnist/5"
+    shirt: "mnist/6"
+    sneaker: "mnist/7"
+    top: "mnist/8"
+    trouser: "mnist/9"
+
+
+domains:
+  X: mnist_t
+  Y: fmnist_t
+  Z: fmnist_t
+
+streams:
+  X: x
+  Y: y
+  Z: z
+
+avoid_states:
+  accepting_sinks: { "linear": 0.01 }
+  rejecting_sinks: { "linear": 0.01 }
+  self_loops: { "linear": 0.1 }
+
+truncate_on_sinks:
+  accepting: False
+  rejecting: False
+
+seed: 12345
+
+

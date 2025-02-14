@@ -12,7 +12,7 @@ def seed(seed):
     """
     Seed the various random generators.
 
-    Important: flloat library is not affected by this function and it has non-deterministic behavior!
+    Important: flloat library is not affected by this function, and it has non-deterministic behavior!
     :param seed: The seed to use.
     :return: A seeded numpy.random.Generator.
     """
@@ -37,25 +37,32 @@ def parse_config(filename):
 
     # Optional keys:
     if "seed" not in config:
-        config["seed"] = datetime.datetime.now().timestamp()
-        config["seed"] = datetime.datetime.now().timestamp()
-
-    if "patience" not in config:
-        config["patience"] = 1000
+        config["seed"] = [datetime.datetime.now().timestamp()]
 
     if "minizinc_prefix" not in config:
         config["minizinc_prefix"] = ""
 
     if "avoid_states" not in config:
-        config["avoid_states"] = {"absorbing_accepting": False, "absorbing_rejecting": False, "self_loops": False}
+        config["avoid_states"] = {"accepting_sinks": False, "rejecting_sinks": False, "self_loops": False}
 
-    if "truncate_on_absorbing" not in config:
-        config["truncate_on_absorbing"] = {"accepting": False, "rejecting": False}
+    if "truncate_on_sink" not in config:
+        config["truncate_on_sink"] = {"accepting": False, "rejecting": False}
 
-    assert isinstance(config["seed"], int), "Random seed must be integer, found {}.".format(type(config["seed"]))
-    assert isinstance(config["patience"], int) and config["patience"] > 0, \
-        "Patience for rejection sampling must be > 0, found {}.".format(config["patience"])
+    if "guarantee_constraint_sampling" not in config:
+        config["guarantee_constraint_sampling"] = False
 
+    if "guarantee_mode" not in config:
+        config["guarantee_mode"] = "strict_f"
+
+    if "incremental_guarantee_ratio" not in config:
+        config["incremental_guarantee_ratio"] = 1.0
+
+    assert isinstance(config["seed"], int) or isinstance(config["seed"], list), "Random seed must be integer or list, found {}.".format(type(config["seed"]))
+    if isinstance(config["seed"], list):
+        for s in config["seed"]:
+            assert isinstance(s, int), "Every element of the seed list must be integer, found {} ({}).".format(s, type(s))
+    else:
+        config["seed"] = [config["seed"]]
 
     assert config["mode"] in ["sequential", "incremental", "sequential_positive_only"], \
         "Unknown benchmark mode. Expected one of ['sequential', 'sequential_positive_only', 'incremental'], found {}.".format(config["mode"])
@@ -88,10 +95,21 @@ def parse_config(filename):
     config["predicates"] = sanitized_predicates
 
     vars = set()
-    extracted_preds = re.findall(r'[a-z][0-9a-z]*\([A-Z,\s]+\)', config["formula"])
+    extracted_preds = set(re.findall(r'[a-z][0-9a-z]*\([A-Z,\s]+\)', config["formula"]))
+
+    # Add variables from temporal specification.
     for pred in extracted_preds:
         for t in pred.split("(")[1].split(")")[0].split(","):
             vars.add(t.strip())
+
+    # Add variables from orphaned predicates (these won't require substitutions).
+    temporal_preds = {p.split("(")[0] for p in extracted_preds}
+    orphans = {p.split("(")[0] for p in config["predicates"].keys()}.difference(temporal_preds)
+    for p in set(config["predicates"].keys()):
+        if p.split("(")[0] in orphans:
+            for t in p.split("(")[1].split(")")[0].split(","):
+                vars.add(t.strip())
+
 
     assert isinstance(config["types"], dict), "Types should be a dict of dicts, found {}.".format(type(config["types"]))
     for k, v in config["types"].items():
@@ -120,6 +138,7 @@ def parse_config(filename):
     tmp = {}
     for k, v in config["domains"].items():
         assert k in vars, "Variable {} does not appear in any constraint.".format(k)
+
         assert isinstance(v, str) or isinstance(v, dict), \
             "Domain specifications must be either type names (str) or dictionaries {{split_name: type_name}}, found {}.".format(type(v))
         if isinstance(v, str):
@@ -164,8 +183,8 @@ def parse_config(filename):
             "The number of samples for split {} must be > 0, found {}.".format(k, v["samples"])
         assert os.path.exists(v["path"]), "Data path for split {} not found at {}.".format(k, v["path"])
 
-    assert {"absorbing_accepting", "absorbing_rejecting", "self_loops"} == set(config["avoid_states"].keys()), \
-        "Avoidance policies must be defined for absorbing-accepting and absorbing-rejecting and self-loop states, found: {}.".format(config["avoid_states"].keys())
+    assert {"accepting_sinks", "rejecting_sinks", "self_loops"} == set(config["avoid_states"].keys()), \
+        "Avoidance policies must be defined for accepting sinks, rejecting sinks and self-loop states, found: {}.".format(config["avoid_states"].keys())
     tmp = {}
     for k, v in config["avoid_states"].items():
         assert isinstance(v, bool) or isinstance(v, dict), \
@@ -181,5 +200,18 @@ def parse_config(filename):
             tmp[k] = ("linear", 0.0 if v else 1.0)
 
     config["avoid_states"] = tmp
+
+    assert config["guarantee_constraint_sampling"] in [False, True, "positive", "negative", "both"], \
+        "Constraint sampling guarantees must be either bool or one of ['positive', 'negative', 'both'], found {}.".format(config["guarantee_constraint_sampling"])
+
+    assert config["guarantee_mode"] in ["strict_f", "strict_g", "best_f", "best_g"], \
+        "Constraint guarantee mode must be one of ['strict_f', 'strict_g', 'best_f', 'best_g'], found {}.".format(config["guarantee_mode"])
+
+    assert (config["incremental_guarantee_ratio"] == "once" or isinstance(config["incremental_guarantee_ratio"], float) and
+            config["incremental_guarantee_ratio"] > 0.0 and config["incremental_guarantee_ratio"] <= 1.0), \
+        "Guarantee ratio for incremental mode must be a non-null probability (0 < p <= 1.0) or 'once', found {}.".format(config["incremental_guarantee_ratio"])
+
+    if config["guarantee_constraint_sampling"] == "both":
+        config["guarantee_constraint_sampling"] = True
 
     return config

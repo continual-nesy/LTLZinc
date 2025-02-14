@@ -1,0 +1,42 @@
+mode: incremental
+
+length: 10
+
+splits:
+  train: {path: "data/train", samples: 800}
+  val:   {path: "data/train", samples: 100}
+  test:  {path: "data/test", samples: 100}
+
+minizinc_prefix: ""
+
+predicates:
+  "even(X)": "X in {2, 4, 6, 8}"
+  "odd(X)": "X in {1, 3, 5, 7}"
+  "zero(X)": "X = 0"
+
+formula: "!zero(X) & (!zero(X) U (zero(X) & WX G !zero(X)))" # !zero(X) required to avoid zero(X) true at first task.
+
+types:
+  mnist_t:
+    0: "mnist/0"
+    1: "mnist/1"
+    2: "mnist/2"
+    3: "mnist/3"
+    4: "mnist/4"
+    5: "mnist/5"
+    6: "mnist/6"
+    7: "mnist/7"
+    8: "mnist/8"
+    9: "mnist/9"
+
+domains:
+  X: mnist_t
+
+streams:
+  X: +x
+
+guarantee_constraint_sampling: positive
+guarantee_mode: best_f
+incremental_guarantee_ratio: 1.0
+
+seed: [0, 12345, 67890, 88888, 66666, 11111]
