@@ -148,13 +148,16 @@ def get_arg_parser():
                             help="Type of oracle noise in {'flip', 'confidence'} (default: 'flip')",
                             type=str, default="flip", choices=["flip", "confidence"])
     arg_parser.add_argument('--calibrate',
-                            help="Use additional temperature parameters to calibrate probabilities (default: False)",
-                            type=ArgBoolean(), default=False)
+                            help="Use additional temperature parameters to calibrate probabilities (default: True)",
+                            type=ArgBoolean(), default=True)
 
     # Experiment parameters.
     arg_parser.add_argument('--seed',
                             help="Integer seed for random generator (if negative, use timestamp; default: -1)",
                             type=int, default=-1)
+    arg_parser.add_argument('--task_seed',
+                            help="Seed used in task generation (it must be a subfolder of the task; default: 12345)",
+                            type=int, default=12345)
     arg_parser.add_argument('--epoch_timeout',
                             help="Timeout for each epoch, in minutes (disable if 0; default: 0)",
                             type=ArgNumber(int, min_val=0), default=0)
@@ -330,7 +333,7 @@ def preflight_checks(opts):
     assert os.path.exists(annotations_path), \
         "Annotation folder {} does not exist. Have you built the benchmark?".format(annotations_path)
 
-    task_dir = "{}/{}".format(annotations_path, opts["task"])
+    task_dir = "{}/{}/{}".format(annotations_path, opts["task"], opts["task_seed"])
     assert os.path.exists(task_dir), "Task folder {} does not exist.".format(task_dir)
 
     for split in ["train", "val", "test"]:

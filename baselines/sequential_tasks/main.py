@@ -33,7 +33,7 @@ def run(opts, rng):
     """
 
     annotations_path = "{}/{}".format(opts["prefix_path"], opts["annotations_path"])
-    task_dir = "{}/{}".format(annotations_path, opts["task"])
+    task_dir = "{}/{}/{}".format(annotations_path, opts["task"], opts["task_seed"])
 
     task_opts = {}
     with open("{}/automaton.yml".format(task_dir), "r") as file:
