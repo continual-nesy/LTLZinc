@@ -6,9 +6,15 @@ import torch
 import datetime
 import utils
 
-from networks import SequenceClassifier, ScallopE2E
-from dataset import LTLZincSequenceDataset
+from networks import ContinualClassifier
+from buffer import RingBuffer, ReservoirBuffer
+from dataset import LTLZincIncrementalDataset
 from train import train
+
+from torchvision.models.densenet import DenseNet121_Weights
+from torchvision.models.googlenet import GoogLeNet_Weights
+from torchvision.models.shufflenetv2 import ShuffleNet_V2_X0_5_Weights
+from torchvision.models.squeezenet import SqueezeNet1_1_Weights
 
 # Experiment entrypoint. This script allows to run a single experiment, by passing hyper-parameters as command line
 # arguments. It exploits Weights and Biases (W&B) groups and tags to organize experiments in a meaningful way.
@@ -32,6 +38,7 @@ def run(opts, rng):
     :return: Generator yielding tuples (dict of epoch statistics, set of epoch tags).
     """
 
+
     annotations_path = "{}/{}".format(opts["prefix_path"], opts["annotations_path"])
     task_dir = "{}/{}/{}".format(annotations_path, opts["task"], opts["task_seed"])
 
@@ -45,18 +52,57 @@ def run(opts, rng):
     with open("{}/mappings.yml".format(task_dir), "r") as file:
         task_opts["mappings"] = yaml.safe_load(file)
 
+    with open("{}/{}/target_metrics.yml".format(annotations_path, opts["task"]), "r") as file:
+        target_metrics = yaml.safe_load(file)
+
+
     classes = utils.domains_to_class_ids(task_opts)
 
-    train_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "train", opts["use_random_samples"], rng, transform=None)
-    val_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "val", False, rng, transform=None)
-    test_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "test", False, rng, transform=None)
+    if opts["backbone_module"] == "squeezenet11":
+        transforms = SqueezeNet1_1_Weights.IMAGENET1K_V1.transforms()
+    elif opts["backbone_module"] == "shufflenetv2x05":
+        transforms = ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1.transforms()
+    elif opts["backbone_module"] == "googlenet":
+        transforms = GoogLeNet_Weights.IMAGENET1K_V1.transforms()
+    elif opts["backbone_module"] == "densenet121":
+        transforms = DenseNet121_Weights.IMAGENET1K_V1.transforms()
 
-    if opts["scallop_e2e"]:
-        model = ScallopE2E(opts, task_opts, classes)
+    train_ds = LTLZincIncrementalDataset(opts["prefix_path"], task_dir, classes, "train", opts["use_random_samples"], rng, transform=transforms)
+    val_ds = LTLZincIncrementalDataset(opts["prefix_path"], task_dir, classes, "val", False, rng, transform=transforms)
+    test_ds = LTLZincIncrementalDataset(opts["prefix_path"], task_dir, classes, "test", False, rng, transform=transforms)
+
+    if opts["knowledge_availability"] == "states":
+        knowledge_bins = ["s_{}".format(s) for s in task_opts["automaton"]["states"]]
+    elif opts["knowledge_availability"] == "predicates":
+        knowledge_bins = list(task_opts["mappings"].keys())
     else:
-        model = SequenceClassifier(opts, task_opts, classes, opts["oracle_noise"], opts["oracle_type"])
+        knowledge_bins = ["none"]
 
-    for (status, history, return_tags) in train(model, classes, train_ds, val_ds, test_ds, opts):
+    model = ContinualClassifier(opts, classes, knowledge_bins)
+
+    if opts["buffer_type"] == "ring":
+        buffers = {k: RingBuffer(opts["buffer_size"] // len(knowledge_bins), rng) for k in knowledge_bins}
+    elif opts["buffer_type"] == "reservoir":
+        buffers = {k: ReservoirBuffer(opts["buffer_size"] // len(knowledge_bins), rng) for k in knowledge_bins}
+    else:
+        buffers = None
+
+    if opts["distillation_source"] != "none" and opts["knowledge_availability"] != "none":
+        teachers = {k: ContinualClassifier(opts, classes, ["none"]) for k in knowledge_bins}
+    else:
+        # For knowledge = "none" use self-distillation (ie. clone  weights during training).
+        teachers = None
+
+    assert isinstance(target_metrics, list), "The target_metrics.yml file must contain a list of classes or predicates."
+    tmp_classes = {}
+    for v in classes.values():
+        tmp_classes.update(v)
+
+    for m in target_metrics:
+        assert str(m) in tmp_classes.keys(), "Unknown class {}".format(m)
+    target_metrics = [tmp_classes[str(m)] for m in target_metrics]
+
+    for (status, history, return_tags) in train(model, buffers, teachers, train_ds, val_ds, test_ds, target_metrics, opts, task_opts):
         # Postpone end-of-training signaling, so that the process is not killed before saving results.
         if status != "end":
             yield (status, history, return_tags)
@@ -78,7 +124,7 @@ def run(opts, rng):
         with open("{}/{}_results.yml".format(op, filename), "w") as file:
             yaml.safe_dump({"history": history, "tags": return_tags}, file)
 
-    yield ("end", history, return_tags)
+    yield("end", history, return_tags)
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
@@ -88,7 +134,7 @@ if __name__ == "__main__":
     opts = vars(arg_parser.parse_args())
 
     utils.preflight_checks(opts)
-    experiment_name = utils.generate_name(opts, "cows")
+    experiment_name = utils.generate_name(opts, "german_expressionism")
     run_experiment = utils.prune_hyperparameters(opts, arg_parser) or not opts["abort_irrelevant"]
 
 
@@ -121,7 +167,8 @@ if __name__ == "__main__":
                 wb.finish()
 
         else: # If W&B is not enabled, at least print results on screen.
-            print({"history": history, "tags": return_tags})
+            printable_history = [{k: v for k, v in x.items() if "matrix" not in k} for x in history]
+            print({"history": printable_history, "tags": return_tags})
 
     else:
         if wb is not None:

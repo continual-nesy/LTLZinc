@@ -1,0 +1,85 @@
+program: main.py
+method: grid
+project: LTLZinc
+name: CIFAR100 incremental tasks
+metric:
+  name: val/avg_acc
+  goal: maximize
+parameters:
+  task:
+    values:
+      - class_incremental/task1_cifar100
+      - class_incremental/task2_cifar100
+  task_seed:
+    values:
+      - 0
+      - 11111
+      - 12345
+      #- 67890
+      #- 88888
+      #- 66666
+  lr:
+    value: 1e-4
+  epochs:
+    value: 25
+  batch_size:
+    value: 32
+  buffer_batch_size:
+    value: 16
+  eval_batch_size:
+    value: 128
+  supervision_lambda:
+    value: 1.0
+  replay_lambda:
+    value: 1.0
+  distil_lambda:
+    value: 1.0
+  grad_clipping:
+    value: 10.0
+  train_on_irrelevant:
+    value: True
+  buffer_size:
+    value: 500
+  buffer_type:
+    values:
+      #- none
+      #- ring
+      - reservoir
+  buffer_loss:
+    values:
+      - ce
+      - gem
+  distillation_source:
+    values:
+      - none
+      #- batch
+      #- buffer
+      -  both
+  modular_net:
+    values:
+      - True
+      #- False
+  backbone_module:
+    values:
+      - squeezenet11
+      #- shufflenetv2x05
+      - googlenet
+      #- densenet121' # OOM with teacher-student distillation.
+  pretrained_weights:
+    value: True
+  emb_size:
+    value: 256
+  hidden_size:
+    value: 128
+  knowledge_availability:
+    values:
+      - none
+      - states
+      - predicates
+  seed:
+    values:
+      - 0
+      - 12345
+      - 67890
+  device:
+    value: cuda:0

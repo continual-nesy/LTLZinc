@@ -73,7 +73,10 @@ class LTLZincSequenceDataset(Dataset):
             states[i + 1] = int(s1)
 
             for j, p in enumerate(self.constraints):
-                if str(seq[p]).startswith("("):
+                # Convention: in the csv "0" and "1" refer to false/true which affect the next state of the automaton.
+                # "(0)" and "(1)" refer to "false but don't care" and "true but don't care" (irrelevant for the transition),
+                # "[value]" refers to orphan predicates.
+                if str(seq[p]).startswith("(") or str(seq[p]).startswith("["):
                     cons_labels[j][i] = int(seq[p][1:-1])
                 else:
                     cons_labels[j][i] = int(seq[p])
@@ -81,9 +84,8 @@ class LTLZincSequenceDataset(Dataset):
 
             for j, v in enumerate(self.vars):
                 vv = v.replace("out_", "var_")
-                # Convention: in the csv "0" and "1" refer to false/true which affect the next state of the automaton.
-                # "(0)" and "(1)" refer to "false but don't care" and "true but don't care",
-                # because they are irrelevant in the current state.
+                # Convention: in the csv "class" refers to a value which affect the next state of the automaton.
+                # "(class)" refers to a value which  DOES NOT affect the transition.
                 if str(seq[vv]).startswith("("):
                     var_labels[j][i] = self.classes[str(v)][seq[vv][1:-1]]
                 else:

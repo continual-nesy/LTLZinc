@@ -6,7 +6,10 @@ baselines/sequential_tasks/__pycache__/
 baselines/sequential_tasks/wandb/
 baselines/sequential_tasks/generate_readme_stub.py
 baselines/sequential_tasks/*.bak
-baselines/incremental_tasks
+baselines/incremental_tasks/__pycache__/
+baselines/incremental_tasks/wandb/
+baselines/incremental_tasks/*.bak
+baselines/incremental_tasks/generate_readme_stub.py
 debug.yml
 generate_readme_stub.py
 /benchmark_old/
