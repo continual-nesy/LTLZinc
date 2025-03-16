@@ -147,16 +147,17 @@ def train(net, buffers, teachers, train_ds, val_ds, test_ds, target_metrics, opt
                 if t > 0:
                     if opts["buffer_loss"] != "none" or opts["distillation_source"] in ["buffer", "both"]:
                         buffer_batch = {}
-                        for k, v in buffers.items():
-                            if k not in trainable_knowledge:
-                                if opts["knowledge_availability"] == "none":
-                                    tmp = v.get_random_batch(opts["buffer_batch_size"])
-                                else:
-                                    tmp = v.get_random_batch(
-                                        opts["buffer_batch_size"] // (len(full_knowledge) - len(trainable_knowledge)))
+                        if buffers is not None:
+                            for k, v in buffers.items():
+                                if k not in trainable_knowledge:
+                                    if opts["knowledge_availability"] == "none":
+                                        tmp = v.get_random_batch(opts["buffer_batch_size"])
+                                    else:
+                                        tmp = v.get_random_batch(
+                                            opts["buffer_batch_size"] // (len(full_knowledge) - len(trainable_knowledge)))
 
-                                if len(tmp[0]) > 0:
-                                    buffer_batch[k] = [torch.stack(tmp[0], dim=0), torch.stack(tmp[1], dim=0), torch.stack(tmp[2], dim=0)]
+                                    if len(tmp[0]) > 0:
+                                        buffer_batch[k] = [torch.stack(tmp[0], dim=0), torch.stack(tmp[1], dim=0), torch.stack(tmp[2], dim=0)]
 
                         # In case no sample has been buffered, skip replay for this epoch.
                         if len(buffer_batch.keys()) == 0:

@@ -1,11 +1,10 @@
 
-# Project name
+# Class incremental experiments for LTLZinc
 Baseline experiments for class incremental tasks 1-4 presented in our paper.
 
 [![License: CC BY-NC-SA 4.0](https://licensebuttons.net/l/by-nc-sa/4.0/80x15.png)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 ## Description
-TODO: Short description of the project...
 
 ## Requirements
 
@@ -21,8 +20,6 @@ torchvision==0.21.0
 tqdm==4.66.2
 
 ```
-
-TODO: Additional requirements to be installed manually...
 
 ## Usage
 
