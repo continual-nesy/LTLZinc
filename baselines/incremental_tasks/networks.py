@@ -1,4 +1,5 @@
 import torch
+from torchvision.models import GoogLeNetOutputs
 from torchvision.models.shufflenetv2 import shufflenet_v2_x0_5
 from torchvision.models.densenet import densenet121
 from torchvision.models.squeezenet import squeezenet1_1
@@ -74,6 +75,9 @@ class ContinualClassifier(torch.nn.Module):
     def forward(self, imgs):
         batched_imgs = torch.flatten(imgs, start_dim=0, end_dim=1)
         batched_embs = self.backbone(batched_imgs)
+        if isinstance(batched_embs, GoogLeNetOutputs):
+            batched_embs = batched_embs.logits
+            
         bb_embs = torch.reshape(batched_embs, (imgs.size(0), -1))
 
         if self.one_to_one_mapping:
