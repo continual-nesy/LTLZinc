@@ -3,7 +3,7 @@ method: grid
 project: LTLZinc
 name: MNIST incremental tasks
 metric:
-  name: val/avg_acc
+  name: val/avg_accuracy
   goal: maximize
 parameters:
   task:
@@ -64,7 +64,7 @@ parameters:
       - squeezenet11
       #- shufflenetv2x05
       - googlenet
-      #- densenet121' # OOM with teacher-student distillation.
+      #- densenet121 # OOM with teacher-student distillation.
   pretrained_weights:
     value: False
   emb_size:
