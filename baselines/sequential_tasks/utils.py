@@ -85,6 +85,9 @@ def get_arg_parser():
     arg_parser.add_argument('--use_random_samples',
                             help="Ignore annotated image paths and sample new ones with the same label (default: False)",
                             type=ArgBoolean(), default=False)
+    arg_parser.add_argument('--standardize_inputs',
+                            help="Standardize inputs to mean 0 and standard deviation 1 (default: False)",
+                            type=ArgBoolean(), default=False)
     arg_parser.add_argument('--task', help="Name of the task to solve (default: 'task1')", type=str, default="task1")
 
     # Training parameters.

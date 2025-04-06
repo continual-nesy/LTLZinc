@@ -325,8 +325,6 @@ def prune_hyperparameters(opts, arg_parser):
         print("Warning: when using experience replay or buffer-based distillation, buffer_size cannot  be zero. Resetting buffer batch to default value.")
         opts["buffer_size"] = arg_parser.get_default("buffer_size")
 
-    # TODO: other checks?
-
     return ok
 
 

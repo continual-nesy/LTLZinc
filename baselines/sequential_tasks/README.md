@@ -17,6 +17,8 @@ pandas==2.2.2
 PyYAML==6.0.1
 PyYAML==6.0.1
 scallopy==0.1.0
+problog==2.2.7
+pysdd==1.0.5
 torch==2.3.0a0+git39ae4d8
 torcheval==0.0.7
 torchvision==0.18.1
@@ -42,6 +44,7 @@ mv dsharp $CONDA_PREFIX/bin/
 | --annotations_path      | str                                                                                      | benchmark/tasks | Path to the annotation folder, relative to root                                                   |
 | --output_path           | str                                                                                      | outputs         | Path to the output folder, relative to root                                                       |
 | --use_random_samples    | bool                                                                                     | False           | Ignore annotated image paths and sample new ones with the same label                              |
+| --standardize_inputs    | bool                                                                                     | False           | Standardize inputs to mean 0 and standard deviation 1                                             |
 | --task                  | str                                                                                      | task1           | Name of the task to solve                                                                         |
 | --lr                    | float                                                                                    | -0.001          | Learning rate (positive: SGD, negative: Adam)                                                     |
 | --pretraining_lr        | float                                                                                    | -0.0001         | Learning rate for the pre-training phase (positive: SGD, negative: Adam)                          |

@@ -1,7 +1,7 @@
 program: main.py
 method: grid
 project: LTLZinc
-name: CIFAR100 incremental tasks
+name: CIFAR100 online tasks
 metric:
   name: val/avg_accuracy
   goal: maximize
@@ -19,11 +19,13 @@ parameters:
       #- 88888
       #- 66666
   lr:
-    value: 1e-4
+    value: -1e-4 # Adam
   epochs:
-    value: 25
+    value: 1
+  shuffle:
+    value: False
   batch_size:
-    value: 32
+    value: 1
   buffer_batch_size:
     value: 16
   eval_batch_size:
@@ -42,26 +44,26 @@ parameters:
     value: 500
   buffer_type:
     values:
-      #- none
+      - none
       #- ring
       - reservoir
   buffer_loss:
     values:
       - ce
-      - gem
+      #- gem
   distillation_source:
     values:
       - none
-      #- batch
+      - batch
       #- buffer
-      -  both
+      #- both
   modular_net:
     values:
       - True
       #- False
   backbone_module:
     values:
-      - squeezenet11
+      #- squeezenet11
       #- shufflenetv2x05
       - googlenet
       #- densenet121 # OOM with teacher-student distillation.

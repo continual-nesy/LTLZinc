@@ -1,4 +1,6 @@
 import os
+
+import torchvision.transforms
 import wandb
 import sys
 import yaml
@@ -47,9 +49,17 @@ def run(opts, rng):
 
     classes = utils.domains_to_class_ids(task_opts)
 
-    train_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "train", opts["use_random_samples"], rng, transform=None)
-    val_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "val", False, rng, transform=None)
-    test_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "test", False, rng, transform=None)
+    if opts["standardize_inputs"]:
+        transform = torchvision.transforms.Compose([
+            torchvision.transforms.ConvertImageDtype(torch.float),
+            torchvision.transforms.Normalize(mean=0.0, std=1.0, inplace=True)
+        ])
+    else:
+        transform = None
+
+    train_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "train", opts["use_random_samples"], rng, transform=transform)
+    val_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "val", False, rng, transform=transform)
+    test_ds = LTLZincSequenceDataset(opts["prefix_path"], task_dir, classes, "test", False, rng, transform=transform)
 
     if opts["scallop_e2e"]:
         model = ScallopE2E(opts, task_opts, classes)

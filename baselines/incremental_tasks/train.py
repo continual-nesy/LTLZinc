@@ -216,15 +216,15 @@ def train(net, buffers, teachers, train_ds, val_ds, test_ds, target_metrics, opt
             task_stats["{}/time".format(split)] = times[split]
 
             if split in eval_sets.keys():
-                task_stats["{}/avg_accuracy".format(split)] = avg_accuracy(metrics[split]["acc_matrix"])
-                task_stats["{}/avg_forgetting".format(split)] = avg_forgetting(metrics[split]["acc_matrix"])
+                task_stats["{}/avg_accuracy".format(split)] = avg_accuracy(metrics[split]["acc_matrix"][:t+1,:])
+                task_stats["{}/avg_forgetting".format(split)] = avg_forgetting(metrics[split]["acc_matrix"][:t+1,:])
                 task_stats["{}/fw_transfer".format(split)] = forward_transfer(metrics[split]["acc_matrix"])
                 task_stats["{}/bw_transfer".format(split)] = backward_transfer(metrics[split]["acc_matrix"])
 
                 task_stats["{}/focused_avg_accuracy".format(split)] = avg_accuracy(
-                    metrics[split]["focused_acc_matrix"])
+                    metrics[split]["focused_acc_matrix"][:t+1,:])
                 task_stats["{}/focused_avg_forgetting".format(split)] = avg_forgetting(
-                    metrics[split]["focused_acc_matrix"])
+                    metrics[split]["focused_acc_matrix"][:t+1,:])
 
             for k, v in metrics[split].items():
                 if torch.is_tensor(v):

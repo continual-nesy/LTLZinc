@@ -19,7 +19,7 @@ parameters:
       #- 88888
       #- 66666
   lr:
-    value: 1e-3
+    value: 1e-3  # SGD
   epochs:
     value: 25
   batch_size:
