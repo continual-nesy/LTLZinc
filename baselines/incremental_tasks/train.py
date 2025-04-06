@@ -83,7 +83,8 @@ def train(net, buffers, teachers, train_ds, val_ds, test_ds, target_metrics, opt
 
     if opts["grad_clipping"] > 0.0:
         for p in net.parameters():
-            p.register_hook(lambda grad: torch.clamp(grad, -opts["grad_clipping"], opts["grad_clipping"]))
+            if p.requires_grad:
+                p.register_hook(lambda grad: torch.clamp(grad, -opts["grad_clipping"], opts["grad_clipping"]))
 
     history = []
     ok = True

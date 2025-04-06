@@ -121,6 +121,8 @@ def get_arg_parser():
                             type=str, choices=["none", "batch", "buffer", "both"], default="none")
     arg_parser.add_argument("--modular_net", help="Allocate a different layer for each concept (default: False)",
                             type=ArgBoolean(), default=False)
+    arg_parser.add_argument("--freeze_backbone", help="Freeze backbone weights (only if pretrained_weights is also True; default: False)",
+                            type=ArgBoolean(), default=False)
 
     # Model parameters.
     arg_parser.add_argument('--backbone_module',
@@ -324,6 +326,11 @@ def prune_hyperparameters(opts, arg_parser):
         ok = False
         print("Warning: when using experience replay or buffer-based distillation, buffer_size cannot  be zero. Resetting buffer batch to default value.")
         opts["buffer_size"] = arg_parser.get_default("buffer_size")
+
+    if not opts["pretrained_weights"] and opts["freeze_backbone"] != arg_parser.get_default("freeze_backbone"):
+        ok = False
+        print("Warning: when using random backbone initialization, freeze_backbone has no effect. Resetting to default value.")
+        opts["freeze_backbone"] = arg_parser.get_default("freeze_backbone")
 
     return ok
 

@@ -16,18 +16,39 @@ class Backbone(torch.nn.Module):
             # Load ImageNet weights and replace each model's classifier with an emb_size linear layer.
             if opts["backbone_module"] == "squeezenet11":
                 self.model = squeezenet1_1(weights="DEFAULT")
+
+                if opts["freeze_backbone"]:
+                    for p in self.model.parameters():
+                        p.requires_grad_(False)
+
                 final_conv = torch.nn.Conv2d(512, opts["emb_size"], kernel_size=1)
                 self.model.classifier = torch.nn.Sequential(
                     torch.nn.Dropout(p=0.5), final_conv, torch.nn.ReLU(inplace=True), torch.nn.AdaptiveAvgPool2d((1, 1)))
                 torch.nn.init.normal_(final_conv.weight, mean=0.0, std=0.01)
+
             elif opts["backbone_module"] == "shufflenetv2x05":
                 self.model = shufflenet_v2_x0_5(weights="DEFAULT")
+
+                if opts["freeze_backbone"]:
+                    for p in self.model.parameters():
+                        p.requires_grad_(False)
+
                 self.model.fc = torch.nn.Linear(self.model._stage_out_channels[-1], opts["emb_size"])
             elif opts["backbone_module"] == "googlenet":
                 self.model = googlenet(weights="DEFAULT")
+
+                if opts["freeze_backbone"]:
+                    for p in self.model.parameters():
+                        p.requires_grad_(False)
+
                 self.model.fc = torch.nn.Linear(1024, opts["emb_size"])
             elif opts["backbone_module"] == "densenet121":
                 self.model = densenet121(weights="DEFAULT")
+
+                if opts["freeze_backbone"]:
+                    for p in self.model.parameters():
+                        p.requires_grad_(False)
+
                 self.model.classifier = torch.nn.Linear(1024, opts["emb_size"])
                 torch.nn.init.constant_(self.model.classifier.bias, 0)
         else:

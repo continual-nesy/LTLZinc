@@ -73,6 +73,8 @@ parameters:
     value: 256
   hidden_size:
     value: 128
+  freeze_backbone:
+    value: yes
   knowledge_availability:
     values:
       - none

@@ -47,6 +47,7 @@ tqdm==4.66.2
 | --buffer_loss            | ce, gem                                               | ce              | Type of experience replay loss in {'ce', 'gem'}                                                          |
 | --distillation_source    | none, batch, buffer, both                             | none            | Data source for distillation in {'none', 'batch', 'buffer', 'both'} (distillation is disabled if 'none') |
 | --modular_net            | bool                                                  | False           | Allocate a different layer for each concept                                                              |
+| --freeze_backbone        | bool                                                  | False           | Freeze backbone weights (only if pretrained_weights is also True)                                        |
 | --backbone_module        | squeezenet11, shufflenetv2x05, googlenet, densenet121 | cnn             | Perceptual backbone in {'squeezenet11', 'shufflenetv2x05', 'googlenet', 'densenet121'}                   |
 | --pretrained_weights     | bool                                                  | False           | If true, initialize backbone with ImageNet weights                                                       |
 | --emb_size               | int                                                   | 128             | Embedding size of the backbone                                                                           |
