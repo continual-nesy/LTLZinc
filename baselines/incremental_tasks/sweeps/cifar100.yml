@@ -21,11 +21,11 @@ parameters:
   lr:
     value: -1e-4 # Adam
   epochs:
-    value: 1
+    value: 30
   shuffle:
-    value: False
+    value: True
   batch_size:
-    value: 1
+    value: 32
   buffer_batch_size:
     value: 16
   eval_batch_size:
@@ -72,7 +72,7 @@ parameters:
   emb_size:
     value: 256
   hidden_size:
-    value: 128
+    value: 256
   freeze_backbone:
     value: yes
   knowledge_availability:
