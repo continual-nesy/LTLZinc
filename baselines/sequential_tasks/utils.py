@@ -130,7 +130,7 @@ def get_arg_parser():
                             help="Perceptual backbone in {'independent', 'dataset'} (default: 'dataset')",
                             type=str, default="dataset", choices=["independent", "dataset"])
     arg_parser.add_argument('--constraint_module',
-                            help="Constraint module in {'mlp:NUM_HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K'} (default: 'mlp:8')",
+                            help="Constraint module in {'mlp:NUM_HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'problog'} (default: 'mlp:8')",
                             type=str, default="mlp:8")
     arg_parser.add_argument('--dfa_module',
                             help="Automaton module in {'mlp:HIDDEN_NEURONS', 'gru:HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'fuzzy:SEMIRING', 'sddnnf:SEMIRING'} (default: 'mlp:8')",
@@ -290,8 +290,8 @@ def preflight_checks(opts):
                          'diffnandminprob', 'diffsamplekproofs', 'difftopbottomkclauses']
 
     cm = opts["constraint_module"].split(":")
-    assert cm[0] in ["mlp", "scallop"], \
-        "Invalid constraint module, it must be either of {{'mlp', 'scallop'}}, found {}.".format(cm[0])
+    assert cm[0] in ["mlp", "scallop", "problog"], \
+        "Invalid constraint module, it must be one of {{'mlp', 'scallop', 'problog'}}, found {}.".format(cm[0])
     if cm[0] == "mlp":
         assert len(cm) == 2, \
             "The MLP constraint module takes exactly 1 hyper-parameter (number of neurons in the hidden layer), found {}.".format(cm[1:])
@@ -308,6 +308,10 @@ def preflight_checks(opts):
         assert int(cm[2], 10) >= 1 and int(cm[3], 10) >= 1, \
             "Top-k values for Scallop must be positive integers, found train_k={}, test_k={}".format(cm[2], cm[3])
         opts["constraint_module"] = {"type": "scallop", "provenance": cm[1], "train_k": int(cm[2], 10), "test_k": int(cm[3], 10)}
+    else:
+        assert len(cm) == 1, \
+            "The Problog constraint module takes no hyper-parameters, found {}.".format(cm[1:])
+        opts["constraint_module"] = {"type": "problog"}
 
     dm = opts["dfa_module"].split(":")
     assert dm[0] in ["mlp", "gru", "scallop", "fuzzy", "sddnnf"], \

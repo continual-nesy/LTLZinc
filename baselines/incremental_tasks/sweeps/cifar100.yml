@@ -1,7 +1,7 @@
 program: main.py
 method: grid
 project: LTLZinc
-name: CIFAR100 online tasks
+name: CIFAR100 tasks (trainable backbone)
 metric:
   name: val/avg_accuracy
   goal: maximize
@@ -74,7 +74,7 @@ parameters:
   hidden_size:
     value: 256
   freeze_backbone:
-    value: yes
+    value: no # yes
   knowledge_availability:
     values:
       - none

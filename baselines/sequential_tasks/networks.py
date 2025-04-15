@@ -2,7 +2,7 @@ import torch
 import scallopy
 import torch.nn.functional as F
 
-from constraint_modules import ConstraintMLP, ConstraintScallop
+from constraint_modules import ConstraintMLP, ConstraintScallop, ConstraintProblog
 from automata import DFAMLP, DFAGRU, DFAProb, DFAScallop
 from backbones import backbone_factory
 from utils import sympy_to_scallop
@@ -38,7 +38,7 @@ class SequenceClassifier(torch.nn.Module):
                 self.propositions,
                 opts["calibrate"],
                 opts["eps"])
-        else:
+        elif opts["constraint_module"]["type"] == "scallop":
             self.constraints = ConstraintScallop(
                 program_path,
                 classes,
@@ -49,6 +49,13 @@ class SequenceClassifier(torch.nn.Module):
                 opts["calibrate"],
                 opts["eps"]
             )
+        else:
+            self.constraints = ConstraintProblog(
+                program_path,
+                classes,
+                self.propositions,
+                opts["calibrate"],
+                opts["eps"])
 
         # DFA module can be: MLP, GRU, fuzzy automaton with probability semiring,
         # fuzzy automaton with log-probability semiring, or Scallop program.
