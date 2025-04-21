@@ -94,12 +94,10 @@ class ProbSemiring(problog.evaluator.Semiring):
         return 0.0
 
     def is_one(self, value):
-        return 1.0 - self.eps < value < 1.0 + self.eps
+        return (1.0 - self.eps <= value).all()
 
     def is_zero(self, value):
-        #return torch.all(value < self.eps)
-        return value.isclose(torch.tensor([0.0]).to(value.device), atol=self.eps).all().item()
-        # return -1e-12 < value < 1e-12
+        return (value <= self.eps).all()
 
     def plus(self, a, b):
         return a + b
@@ -113,19 +111,17 @@ class ProbSemiring(problog.evaluator.Semiring):
     def normalize(self, a, z):
         return a / z
 
-    def value(self, of_what):  # type: ignore
-        return self.nn_evaluations[str(of_what.args[0])][:, int(of_what.args[-1])]
+    def value(self, a):
+        return self.nn_evaluations[str(a.args[0])][:, int(a.args[-1])]
 
-    def is_dsp(self):  # type: ignore
-        """Indicates whether this semiring requires solving a disjoint sum problem."""
+    def is_dsp(self):
         return True
 
-    def in_domain(self, _):  # type: ignore
+    def in_domain(self, a):
         return True
 
-    @classmethod
-    def create(cls, *_, **__):
-        return cls()  # type: ignore
+    def result(self, a, formula=None):
+        return torch.clamp(a, 0, 1)
 
 
 class ConstraintProblog(torch.nn.Module):
@@ -160,14 +156,13 @@ class ConstraintProblog(torch.nn.Module):
         self.sdd = problog.sdd_formula.SDD.create_from(logic_formula)
 
     def forward(self, imgs):
-
         if self.calibrate:
             t = F.relu(self.classes_temp_logits) + self.eps
             nesy_in = {k: F.softmax(imgs[k] / t[i], dim=1) for i, k in enumerate(sorted(imgs.keys()))}
         else:
             nesy_in = {k: F.softmax(v, dim=1) for k, v in imgs.items()}
 
-        nesy_out = self.sdd.evaluate(semiring=ProbSemiring(nesy_in))
+        nesy_out = self.sdd.evaluate(semiring=ProbSemiring(nesy_in, eps=self.eps))
         nesy_out = {str(k).split("(")[0]: v for k, v in nesy_out.items()}
 
         if self.calibrate:

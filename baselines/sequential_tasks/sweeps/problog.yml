@@ -1,0 +1,82 @@
+program: main.py
+method: grid
+project: LTLZinc
+name: Problog experiments
+metric:
+  name: val/avg_acc
+  goal: maximize
+parameters:
+  task:
+    values:
+    - sequential/task1
+    - sequential/task2
+    - sequential/task3
+    - sequential/task4
+    - sequential/task5
+    - sequential/task6
+    - sequential_long/task1
+    - sequential_long/task2
+    - sequential_long/task3
+    - sequential_long/task4
+    - sequential_long/task5
+    - sequential_long/task6
+  device:
+    value: cuda:0
+  batch_size:
+    value: 32
+  epochs:
+    values:
+    - 50
+  teacher_forcing:
+    value: False
+  lr:
+    value: -1e-3
+  pretraining_lr:
+    value: -1e-3
+  sequence_lambda:
+    value: 1.0
+  grad_clipping:
+    value: 10.0
+  epoch_timeout:
+    value: 15
+
+  seed:
+    values:
+      - 12345
+      - 67890
+      - 88888
+      ##- 22222
+  backbone_module:
+    values:
+      #- independent
+      - dataset
+  constraint_module:
+    value: problog
+  dfa_module:
+    value: sddnnf:prob
+  scallop_e2e:
+    value: False
+  train_on_irrelevant:
+    value: True
+  pretraining_epochs:
+    value: 1
+  ablate_fc_after_pretraining:
+    value: True
+  standardize_inputs:
+    value: yes
+  supervision_lambda:
+    value: 0
+  constraint_lambda:
+    values:
+    - 0.0
+    - 1.0
+  successor_lambda:
+    values:
+      - 0.0
+      - 1.0
+  use_random_samples:
+    value: True
+  calibrate:
+    value: False
+  sequence_loss:
+    value: bce
