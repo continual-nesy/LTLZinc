@@ -10,6 +10,8 @@ class SmallNet(torch.nn.Module):  # Same as Scallop experiments (except with 3x3
         self.fc1 = torch.nn.Linear(64 * 5 * 5, 1024)
         self.fc2 = torch.nn.Linear(1024, classes)
 
+        self.last_layer = self.fc2
+
     def forward(self, x):
         x = F.max_pool2d(self.conv1(x), 2)
         x = F.max_pool2d(self.conv2(x), 2)
@@ -26,6 +28,8 @@ class NonZeroMNIST(torch.nn.Module):  # Used for parameter sharing while prevent
         super().__init__()
         self.mnistnet = mnistnet
 
+        self.last_layer = self.mnistnet.fc2
+
     def forward(self, x):
         return self.mnistnet(x)[:, 1:]
 
@@ -35,6 +39,8 @@ class FiveFMNIST(torch.nn.Module):  # Used for parameter sharing while preventin
     def __init__(self, mnistnet):
         super().__init__()
         self.mnistnet = mnistnet
+
+        self.last_layer = self.mnistnet.fc2
 
     def forward(self, x):
         return self.mnistnet(x)[:, 5:] # Simply return the *last* five neurons.

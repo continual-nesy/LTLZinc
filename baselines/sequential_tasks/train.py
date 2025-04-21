@@ -105,6 +105,10 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
     for e in tqdm.trange(opts["pretraining_epochs"] + opts["epochs"], position=0, desc="epoch", disable=opts["verbose"] < 1):
         # At the end of pre-training, reset the optimizer.
         if e == opts["pretraining_epochs"]:
+            if opts["ablate_fc_after_pretraining"]:
+                for v in net.backbone.values():
+                    v.last_layer.reset_parameters()
+
             if opts["lr"] > 0.0:
                 optimizer = torch.optim.SGD(net.parameters(), lr=opts["lr"])
             else:

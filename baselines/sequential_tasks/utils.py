@@ -121,6 +121,9 @@ def get_arg_parser():
     arg_parser.add_argument('--train_on_irrelevant',
                             help="Apply the loss also on irrelevant annotations (default: False)", type=ArgBoolean(),
                             default=False)
+    arg_parser.add_argument('--ablate_fc_after_pretraining',
+                            help="Randomly reinitialize weights of last backbone layer at the end of pretraining (default: False)", type=ArgBoolean(),
+                            default=False)
     arg_parser.add_argument('--grad_clipping', help="Norm for gradient clipping, disable if 0.0 (default: 0.0)",
                             type=ArgNumber(float, min_val=0.0), default=0.0)
 
@@ -135,7 +138,7 @@ def get_arg_parser():
     arg_parser.add_argument('--dfa_module',
                             help="Automaton module in {'mlp:HIDDEN_NEURONS', 'gru:HIDDEN_NEURONS', 'scallop:PROVENANCE:TRAIN_K:TEST_K', 'fuzzy:SEMIRING', 'sddnnf:SEMIRING'} (default: 'mlp:8')",
                             type=str, default="mlp:8")
-    arg_parser.add_argument('--scallop_e2e',
+    arg_parser.add_argument('--scallop_e2e', # TODO: replace problog_e2e
                             help="Use an End-to-End Scallop program for constraints and automaton, instead of two disjoint programs (default: False)",
                             type=ArgBoolean(), default=False)
     arg_parser.add_argument('--use_label_oracle',
@@ -419,7 +422,11 @@ def prune_hyperparameters(opts, arg_parser):
 
     if opts["oracle_noise"] == 0.0 and opts["oracle_type"] != arg_parser.get_default("oracle_type"):
         ok = False
-        print("Warning: oracle_type is ignored with --oracle_noise=0.0")
+        print("Warning: oracle_type is ignored with --oracle_noise=0.0.")
+
+    if opts["pretraining_epochs"] == 0 and opts["ablate_fc_after_pretraining"] != arg_parser.get_default("ablate_fc_after_pretraining"):
+        ok = False
+        print("Warning: ablate_fc_after_pretraining is ignored if --pretraining_epochs=0.")
 
     return ok
 
