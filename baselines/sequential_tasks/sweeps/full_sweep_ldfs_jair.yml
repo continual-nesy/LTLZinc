@@ -31,13 +31,13 @@ parameters:
   teacher_forcing:
     value: False
   lr:
-    value: -1e-4
+    value: -1e-3
   pretraining_lr:
     value: -1e-3
   sequence_lambda:
     value: 1.0
   grad_clipping:
-    value: 10.0
+    value: 100.0
   epoch_timeout:
     value: 15
 
@@ -61,16 +61,16 @@ parameters:
       - mlp:64
       - gru:64
       - fuzzy:prob
-      - fuzzy:logprob
+      #- fuzzy:logprob
       - sddnnf:prob
-      - sddnnf:logprob
+      #- sddnnf:logprob
       #- scallop:diffmaxmultprob:1:1 # This always timeouts for automata larger than 2/3 states!
   scallop_e2e:
     value: False
   train_on_irrelevant:
     value: True
   pretraining_epochs:
-    value: 5
+    value: 1
   supervision_lambda:
     value: 0.1
   constraint_lambda:
