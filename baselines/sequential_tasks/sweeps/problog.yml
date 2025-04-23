@@ -1,7 +1,7 @@
 program: main.py
 method: grid
 project: LTLZinc
-name: Problog experiments
+name: Nesy experiments
 metric:
   name: val/avg_acc
   goal: maximize
@@ -36,7 +36,7 @@ parameters:
   sequence_lambda:
     value: 1.0
   grad_clipping:
-    value: 10.0
+    value: 100.0
   epoch_timeout:
     value: 15
 
@@ -51,7 +51,10 @@ parameters:
       #- independent
       - dataset
   constraint_module:
-    value: problog
+    values:
+      - problog
+      - mlp:64
+      - scallop:difftopkproofs:1:1
   dfa_module:
     value: sddnnf:prob
   scallop_e2e:
