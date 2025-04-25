@@ -94,10 +94,18 @@ class ProbSemiring(problog.evaluator.Semiring):
         return 0.0
 
     def is_one(self, value):
-        return (1.0 - self.eps <= value).all()
+        out = (1.0 - self.eps <= value)
+        if isinstance(out, bool):
+            return out
+        else:
+            return out.all()
 
     def is_zero(self, value):
-        return (value <= self.eps).all()
+        out = (value <= self.eps)
+        if isinstance(out, bool):
+            return out
+        else:
+            return out.all()
 
     def plus(self, a, b):
         return a + b
@@ -121,7 +129,7 @@ class ProbSemiring(problog.evaluator.Semiring):
         return True
 
     def result(self, a, formula=None):
-        return torch.clamp(a, 0, 1)
+        return a
 
 
 class ConstraintProblog(torch.nn.Module):
@@ -163,7 +171,10 @@ class ConstraintProblog(torch.nn.Module):
             nesy_in = {k: F.softmax(v, dim=1) for k, v in imgs.items()}
 
         nesy_out = self.sdd.evaluate(semiring=ProbSemiring(nesy_in, eps=self.eps))
-        nesy_out = {str(k).split("(")[0]: v for k, v in nesy_out.items()}
+        nesy_out = {str(k).split("(")[0]: (v if
+                                           isinstance(v, torch.Tensor) else
+                                           torch.ones(imgs[sorted(imgs.keys())[0]].size(0), device=self.classes_temp_logits.device) * v)
+                    for k, v in nesy_out.items()}
 
         if self.calibrate:
             t = F.relu(self.props_temp_logits) + self.eps

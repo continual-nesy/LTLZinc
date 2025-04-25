@@ -333,7 +333,8 @@ def train_step(net, optimizer, batch, metrics, baselines, cls_size, is_pretraini
         ret_tags.add("Inf loss")
     else:
         optimizer.zero_grad()
-        loss.backward()
+        if loss.requires_grad:
+            loss.backward()
 
     metrics["train"]["loss"].update(loss)
     norms = grad_norm(list(net.parameters()))
