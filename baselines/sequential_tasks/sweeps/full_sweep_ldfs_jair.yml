@@ -56,6 +56,7 @@ parameters:
       #- mlp:8
       - mlp:64
       - scallop:difftopkproofs:1:1
+      - problog
   dfa_module:
     values:
       - mlp:64

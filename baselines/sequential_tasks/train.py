@@ -127,9 +127,11 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
         net.train()
 
         start_time = time.time()
+        has_been_updated = False
         for batch in (bar := tqdm.tqdm(train_dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
-            loss, ok, step_tags = train_step(net, optimizer, batch, metrics, baselines, cls_size, e < opts["pretraining_epochs"], opts)
+            loss, ok, step_tags, updt = train_step(net, optimizer, batch, metrics, baselines, cls_size, e < opts["pretraining_epochs"], opts)
 
+            has_been_updated |= updt
             return_tags.update(step_tags)
 
             bar.set_postfix_str(
@@ -144,6 +146,10 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
             # If there was an error, abort training.
             if not ok:
                 break
+
+        if not has_been_updated:
+            ok = False
+            return_tags.add("No gradient update")
 
         times = {"train": time.time() - start_time}
         with torch.no_grad():
@@ -222,6 +228,7 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
 
 def train_step(net, optimizer, batch, metrics, baselines, cls_size, is_pretraining, opts):
     ok = True
+    has_been_updated = False
     ret_tags = set()
     imgs, states, var_labels, cons_labels, label, seq_mask, var_mask, cons_mask = batch
 
@@ -335,6 +342,7 @@ def train_step(net, optimizer, batch, metrics, baselines, cls_size, is_pretraini
         optimizer.zero_grad()
         if loss.requires_grad:
             loss.backward()
+            has_been_updated = True
 
     metrics["train"]["loss"].update(loss)
     norms = grad_norm(list(net.parameters()))
@@ -367,7 +375,7 @@ def train_step(net, optimizer, batch, metrics, baselines, cls_size, is_pretraini
     baselines["train"]["mp"]["succ_acc"].update(torch.exp(ps), ts)
     baselines["train"]["mp"]["seq_acc"].update(pred_label, label)
 
-    return loss, ok, ret_tags
+    return loss, ok, ret_tags, has_been_updated
 
 def eval_step(net, batch, metrics, baselines, split, cls_size, opts):
     imgs, states, var_labels, cons_labels, label, seq_mask, _, _ = batch
