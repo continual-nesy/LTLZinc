@@ -100,6 +100,9 @@ def get_arg_parser():
     arg_parser.add_argument("--pretraining_epochs",
                             help="Pre-training epochs, these will apply only supervision loss with a fixed lambda=1.0 (default: 0)",
                             type=ArgNumber(int, min_val=0), default=0)
+    arg_parser.add_argument("--pretraining_batches",
+                            help="During pretraining, truncate epochs after this number of batches (0 to disable; default: 0)",
+                            type=ArgNumber(int, min_val=0), default=0)
     arg_parser.add_argument("--batch_size", help="Batch size (default: 32)", type=ArgNumber(int, min_val=1), default=32)
     arg_parser.add_argument("--supervision_lambda", help="Weight for direct supervision (default: 0.0)",
                             type=ArgNumber(float, min_val=0.0), default=0.0)
@@ -427,6 +430,10 @@ def prune_hyperparameters(opts, arg_parser):
     if opts["pretraining_epochs"] == 0 and opts["ablate_fc_after_pretraining"] != arg_parser.get_default("ablate_fc_after_pretraining"):
         ok = False
         print("Warning: ablate_fc_after_pretraining is ignored if --pretraining_epochs=0.")
+
+    if opts["pretraining_epochs"] == 0 and opts["pretraining_batches"] != arg_parser.get_default("pretraining_batches"):
+        ok = False
+        print("Warning: pretraining_batches is ignored if --pretraining_epochs=0.")
 
     return ok
 

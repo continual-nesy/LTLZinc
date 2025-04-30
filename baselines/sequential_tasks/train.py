@@ -128,7 +128,7 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
 
         start_time = time.time()
         has_been_updated = False
-        for batch in (bar := tqdm.tqdm(train_dl, position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
+        for b, batch in (bar := tqdm.tqdm(enumerate(train_dl), position=1, desc="batch", leave=False, ncols=0, disable=opts["verbose"] < 2)):
             loss, ok, step_tags, updt = train_step(net, optimizer, batch, metrics, baselines, cls_size, e < opts["pretraining_epochs"], opts)
 
             has_been_updated |= updt
@@ -142,6 +142,8 @@ def train(net, classes, train_ds, val_ds, test_ds, opts):
                     metrics["train"]["const_acc"].compute(), metrics["train"]["succ_acc"].compute(),
                     metrics["train"]["seq_acc"].compute()))
 
+            if e < opts["pretraining_epochs"] and opts["pretraining_batches"] > 0 and b >= opts["pretraining_batches"]:
+                break
 
             # If there was an error, abort training.
             if not ok:
