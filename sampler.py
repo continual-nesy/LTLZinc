@@ -10,7 +10,7 @@ class StateSampler:
         self.rng = rng
 
         self.mapping = mapping
-        self.types = {k: {kk for kk in v.keys()} for k, v in types.items()} # No need for path information.
+        self.types = {k: ({kk for kk in v.keys()} if isinstance(v, dict) else set(v)) for k, v in types.items()} # No need for path information.
         self.domains = domains
 
         self.props = sorted(mapping.keys())

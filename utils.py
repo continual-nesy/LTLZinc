@@ -113,21 +113,31 @@ def parse_config(filename):
 
     assert isinstance(config["types"], dict), "Types should be a dict of dicts, found {}.".format(type(config["types"]))
     for k, v in config["types"].items():
-        assert isinstance(v, dict), "Types should be a dict of dicts, entry {} is {}.".format(k, type(v))
+        assert isinstance(v, dict) or isinstance(v, list), "Types should be a dict of dicts or a dict of lists, entry {} is {}.".format(k, type(v))
         is_enum = None
         is_int = None
-        for k2, v2 in v.items():
-            if is_enum is None:
-                is_enum = isinstance(k2, str)
-            if is_int is None:
-                is_int = isinstance(k2, int)
+        if isinstance(v, dict):
+            for k2, v2 in v.items(): # If a data type is perceptual, we need to check whether its values are coherent and whether images exist.
+                if is_enum is None:
+                    is_enum = isinstance(k2, str)
+                if is_int is None:
+                    is_int = isinstance(k2, int)
 
-            is_enum &= isinstance(k2, str)
-            is_int &= isinstance(k2, int)
+                is_enum &= isinstance(k2, str)
+                is_int &= isinstance(k2, int)
 
-            for k3, v3 in config["splits"].items():
-                assert os.path.exists("{}/{}".format(v3["path"], v2)), \
-                    "Dataset for (domain {}, value {}) not found at {}/{}.".format(k, k2, v3["path"], v2)
+                for k3, v3 in config["splits"].items():
+                    assert os.path.exists("{}/{}".format(v3["path"], v2)), \
+                        "Dataset for (domain {}, value {}) not found at {}/{}.".format(k, k2, v3["path"], v2)
+        else:
+            for k2 in v: # If a data type is symbolic, we need to check whether its values are coherent.
+                if is_enum is None:
+                    is_enum = isinstance(k2, str)
+                if is_int is None:
+                    is_int = isinstance(k2, int)
+
+                is_enum &= isinstance(k2, str)
+                is_int &= isinstance(k2, int)
 
         assert is_enum or is_int, \
             "Values for type {} must be either all integers or all strings, found {}.".format(k, v.keys())

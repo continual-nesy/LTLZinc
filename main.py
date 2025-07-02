@@ -50,7 +50,7 @@ def generate_task(filename, silent=False):
             with open("benchmark/tasks/{}/mappings.yml".format(name), "w") as file:
                 yaml.dump(mappings, file)
 
-            type_values = {k: sorted([kk for kk in v.keys()]) for k, v in config["types"].items()}
+            type_values = {k: sorted(([kk for kk in v.keys()] if isinstance(v,dict) else v)) for k, v in config["types"].items()}
             domain_values = {}
             for var, v in config["domains"].items():
                 for split, var_type in v.items():
@@ -69,11 +69,16 @@ if __name__ == "__main__":
     assert os.path.exists("data"), "Dataset folder 'data' does not exist. Have you run download_images.py?"
 
     # Disable yaml aliases, this produces larger, but more human-readable, files.
-    yaml.Dumper.ignore_aliases = lambda *args : True
+    yaml.Dumper.ignore_aliases = lambda *args: True
 
     # Generate each task concurrently on a process pool.
     #tasks = sorted([os.path.join(dp, f).split("benchmark/specs")[1] for dp, dn, fn in os.walk("benchmark/specs") for f in fn if f.endswith(".yml")])
-    tasks = ["task_incremental/task2.yml"]
+    #tasks = ["task_incremental/task2.yml"]
+    #tasks = ["example_sec5.yml"]
+
+    #tasks = sorted([os.path.join(dp, f).split("benchmark/specs/")[1] for dp, dn, fn in os.walk("benchmark/specs/safety_patterns") for f in fn if f.endswith(".yml")])
+    #tasks = ["ansya/safety_001.yml", "ansya/safety_002.yml", "ansya/safety_003.yml"]
+    tasks = ["mnist_add.yml"]
 
     with multiprocessing.Pool() as p:
         for _ in tqdm.tqdm(p.imap_unordered(generate_task, tasks), total=len(tasks)):

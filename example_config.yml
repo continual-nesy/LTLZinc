@@ -35,7 +35,7 @@ predicates:
 #   Predicate names will be replaced according to the predicate dictionary (place-holders, A,B,C, will be replaced with variables, X,Y,Z).
 formula: "p(X,Y,Z) & X q(T,U,V) & X X q(X,Y,Z)"
 
-# [Mandatory] Data types. They associate each value to the path containing image samples.
+# [Mandatory] Data types. If dictionaries, they associate each value to the path containing image samples. When defined as lists, they correspond to symbolic variables with no perceptual counterpart (e.g., output variables).
 #   A data type can be integer, or an enumeration (strings). Enumerations will be sorted lexicographically, regardless of the order they appear here (e.g. automobile < bird < cat < dog).
 #   Different data types can associate the same value to different image samples (e.g. 0 -> mnist/0, and 0 -> svhn/0), or be composed of different collections of values (e.g. mnist_05 = {0,1,2,3,4,5}, mnist_69 = {6,7,8,9}).
 #   This feature allows to easily define out-of-distribution or domain-adaptation splits.
@@ -71,6 +71,8 @@ types:
     coat: "fmnist/coat"
     dress: "fmnist/dress"
     pullover: "fmnist/pullover"
+
+  decimal_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] #  Domain for symbolic variables.
 
 # [Mandatory] Domain association for each variable appearing in the LTL formula. If it is mapping {variable: type}, every split will use the specified type.
 #   If it is a mapping {variable: dict}, it will assign a different type for each split. This can be useful for out-of-distribution and domain-adaptation experiments.

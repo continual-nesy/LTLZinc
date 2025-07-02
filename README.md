@@ -1,6 +1,6 @@
 # LTLZinc generator and benchmark
 
-This repository contains the generator and datasets for the [LTLZinc Benchmark](https://duckduckgo.com).
+This repository contains the generator and datasets for the [LTLZinc Benchmark](https://arxiv.org/abs/2505.05106).
 
 Task annotations are available in the release section, data can be downloaded from pytorch datasets, using the `download_images.py` utility.
 Baseline experiments described in the paper are available in the `baselines` subfolder.
