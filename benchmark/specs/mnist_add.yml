@@ -13,13 +13,21 @@ splits:
 minizinc_prefix: |
   include "all_different.mzn";
   
+  enum ternary_t = {a, b, c};
+  var ternary_t: mod3;
+  
   var bool: odd;
   var bool: even;
   constraint odd <-> C mod 2 = 1;
   constraint odd <-> not even;
+  
+  constraint mod3 = a <-> C mod 3 = 0;
+  constraint mod3 = b <-> C mod 3 = 1;
+  constraint mod3 = c <-> C mod 3 = 2;
+  
 
 predicates:
-  "p(A,B,C)": "A + B = C"
+  "p(X,Y,Z)": "X + Y = Z"
   "odd": ~ # If the value is "~" or null, it expects predicates to be defined in minizinc_prefix.
   "even": ~
 
@@ -44,11 +52,12 @@ domains:
   A: mnist_t
   B: mnist_t
   C: int_t
+  mod3: ternary_t  # Defined in prefix. These values will NOT be added to global_enum_t, therefore it will not be possible to compare them to other domains.
 
 streams:
   A: xx
   B: yy
-  C: -zz  #
+  C: -zz  # Output stream.
 
 avoid_states:
   accepting_sinks: False

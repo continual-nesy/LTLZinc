@@ -195,12 +195,14 @@ class SequenceGenerator(AbstractGenerator):
                         tmp_var = streams[i][j][k]
                         if tmp_var.startswith("("):
                             tmp.update({"var_{}".format(tmp_var[1:-1]): "({})".format(v)})
-                            if isinstance(self.types[self.domains[k][split]], dict):
+                            if self.domains[k][split] in self.types and isinstance(self.types[self.domains[k][split]], dict):
                                 tmp.update({"img_{}".format(tmp_var[1:-1]): self._get_random_img(split, k, v)})
                         else:
                             tmp.update({"var_{}".format(tmp_var): str(v)})
-                            if isinstance(self.types[self.domains[k][split]], dict):
+                            if self.domains[k][split] in self.types and isinstance(self.types[self.domains[k][split]], dict):
                                 tmp.update({"img_{}".format(tmp_var): self._get_random_img(split, k, v)})
+                    elif self.domains[k][split] not in self.types.keys():
+                        tmp.update({k: v})
 
                 tmp_props = {k: (v if k not in orphan_props else "[{}]".format(v.replace("(", "").replace(")", ""))) for k, v in props[0].items()}
 
@@ -293,12 +295,14 @@ class TaskGenerator(AbstractGenerator):
                         tmp_var = self.seq_streams[i][k]
                         if tmp_var.startswith("("):
                             tmp.update({"var_{}".format(tmp_var[1:-1]): "({})".format(v)})
-                            if isinstance(self.types[self.domains[k][split]], dict):
+                            if self.domains[k][split] in self.types and isinstance(self.types[self.domains[k][split]], dict):
                                 tmp.update({"img_{}".format(tmp_var[1:-1]): self._get_random_img(split, k, v)})
                         else:
                             tmp.update({"var_{}".format(tmp_var): str(v)})
-                            if isinstance(self.types[self.domains[k][split]], dict):
+                            if self.domains[k][split] in self.types and isinstance(self.types[self.domains[k][split]], dict):
                                 tmp.update({"img_{}".format(tmp_var): self._get_random_img(split, k, v)})
+                    elif self.domains[k][split] not in self.types.keys():
+                        tmp.update({k: v})
 
                 # Orphan propositions are marked as key: "[value]", while normal propositions as key: "value" or key: "(value)".
                 tmp_props = {k: (v if k not in orphan_props else "[{}]".format(v.replace("(", "").replace(")", ""))) for k, v in props[j].items()}

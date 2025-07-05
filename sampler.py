@@ -82,7 +82,8 @@ class StateSampler:
                 if v[split] in numeric_types:
                     problem += "var {{{}}}: {};\n".format(", ".join([str(vv) for vv in sorted(self.types[v[split]])]), k)
                 else:
-                    problem += "var {}: {};\n".format(v[split], k)
+                    if v[split] in self.types.keys():
+                        problem += "var {}: {};\n".format(v[split], k)
 
             problem += "\n"
 

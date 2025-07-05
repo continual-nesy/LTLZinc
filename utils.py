@@ -154,13 +154,14 @@ def parse_config(filename):
     assert isinstance(config["domains"], dict), \
         "Domains should be specified as a dict {{variable: type}}, found {}.".format(type(config["domains"]))
     tmp = {}
+
     for k, v in config["domains"].items():
-        assert k in vars, "Variable {} does not appear in any constraint.".format(k)
+        assert k in vars or re.search("var [^:]+: {};".format(k), config["minizinc_prefix"]) is not None, "Variable {} does not appear in any constraint nor in minizinc_prefix.".format(k)
 
         assert isinstance(v, str) or isinstance(v, dict), \
             "Domain specifications must be either type names (str) or dictionaries {{split_name: type_name}}, found {}.".format(type(v))
         if isinstance(v, str):
-            assert v in config["types"].keys(), "Unknown type {}.".format(v)
+            assert v in config["types"].keys() or "enum {}".format(v) in config["minizinc_prefix"], "Unknown type {}. It must either be specified as 'minizinc_prefix' or in the 'types' dictionary.".format(v)
             tmp[k] = {k2: v for k2 in config["splits"].keys()}
         else:
             if "default" in v.keys():
@@ -187,8 +188,13 @@ def parse_config(filename):
 
     assert isinstance(config["streams"], dict), \
         "Expected a dictionary of stream mappings, found {}.".format(type, config["streams"])
-    assert len(set(config["streams"].keys()).symmetric_difference(config["domains"].keys())) == 0, \
-        "Every variable must appear both on domains specifications and stream specifications. Found variables {} not appearing in both.".format(set(config["streams"].keys()).symmetric_difference(config["domains"].keys()))
+    assert len(set(config["streams"].keys()).difference(config["domains"].keys())) == 0, \
+        "Every variable appearing on stream specifications must also appear on domains. Found variables {} not appearing in both.".format(set(config["streams"].keys()).difference(config["domains"].keys()))
+
+    for v in set(config["domains"].keys()).difference(config["streams"].keys()):
+        assert re.search("var [^:]+: {};".format(v), config["minizinc_prefix"]) is not None, \
+            "Every variable appearing in domains, but not on stream specifications, must be defined in 'minizinc_prefix'. {} has no definition.".format(v)
+
 
     for k, v in config["streams"].items():
         assert isinstance(v, int) or isinstance(v, str), \

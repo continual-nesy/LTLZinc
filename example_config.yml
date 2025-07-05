@@ -24,8 +24,13 @@ minizinc_prefix: |
   include "all_equal.mzn";
   
   var bool odd; % predicate defined in the prefix. 
+  enum ternary_t = {a, b, c};
+  var ternary_t: mod3;
   
   constraint odd <-> X mod 2 = 1;
+  constraint mod3 = a <-> C mod 3 = 0;
+  constraint mod3 = b <-> C mod 3 = 1;
+  constraint mod3 = c <-> C mod 3 = 2;
 
 # [Mandatory] Predicate dictionary. It maps symbolic names (e.g. p, q) to MiniZinc constraints. Placeholders (e.g., A,B,C) will be syntactically replaced.
 #   This dictionary can also contain predicates which do not appear in the formula (orphan predicates). For these, variables CANNOT be placeholders and must be instead ground variables from the "domains" section.
@@ -91,6 +96,7 @@ domains:
     default: fmnist_05_t # Every split (except test_ood) will define U as type "fmnist_05_t".
     test_ood: fmnist_t # Out-of-distribution test set split will define U as type "fmnist_t".
   V: fmnist_t
+  mod3: ternary_t  # Defined in prefix. These values will NOT be added to global_enum_t, therefore it will not be possible to compare them to other domains.
 
 # [Mandatory] Mapping between formula variables and image streams. This allows to multiplex variables at different time-steps.
 #   Streams can optionally be annotated with "modes". Input mode: "+" (default), Output mode: "-".

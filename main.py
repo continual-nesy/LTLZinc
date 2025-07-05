@@ -56,7 +56,10 @@ def generate_task(filename, silent=False):
                 for split, var_type in v.items():
                     if split not in domain_values:
                         domain_values[split] = {}
-                    domain_values[split][var] = type_values[var_type]
+                    if var_type in type_values:
+                        domain_values[split][var] = type_values[var_type]
+                    else:
+                        domain_values[split][var] = None
 
             with open("benchmark/tasks/{}/domain_values.yml".format(name), "w") as file:
                 yaml.dump(domain_values, file)
