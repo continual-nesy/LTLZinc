@@ -221,6 +221,7 @@ class SequenceGenerator(AbstractGenerator):
         cols = ["seq_id", "time", "accepted", "transition"] + [c for c in sorted(df.columns) if c.startswith("img_")]
         cols += [c for c in sorted(df.columns) if c.startswith("var_")]
         cols += [c for c in sorted(df.columns) if c.startswith("p_")]
+        cols += [c for c in sorted(df.columns) if c not in cols] # Other columns at the end.
 
         return df[cols]
 
@@ -311,5 +312,6 @@ class TaskGenerator(AbstractGenerator):
         cols = ["task_id", "seq_id", "transition"] + [c for c in sorted(df.columns) if c.startswith("img_")]
         cols += [c for c in sorted(df.columns) if c.startswith("var_")]
         cols += [c for c in sorted(df.columns) if c.startswith("p_")]
+        cols += [c for c in sorted(df.columns) if c not in cols]  # Other columns at the end.
 
         return df[cols]

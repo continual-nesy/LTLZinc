@@ -80,17 +80,25 @@ def parse_config(filename):
 
     assert isinstance(config["predicates"], dict), \
         "Entry 'predicates' must be a dictionary, found {}.".format(type(config["predicates"]))
+
     sanitized_predicates = {}
     for k, v in config["predicates"].items():
         safe_k = re.sub(r'\s', '', k)
-        assert re.match(r'[a-z][0-9a-z]*\([A-Z]+(,[A-Z]+)*\)', safe_k), \
-            "Predicate names must match [a-z][0-9a-z]*, terms must match [A-Z]+, the structure must conform p(A, B, ..., Z). Found {}.".format(k)
 
-        terms = re.match(r'.+\(([A-Z,]+)\)', safe_k).groups()[0].split(",")
-        for t in terms:
-            assert t in v, "Expected term {} to appear in expression '{}'.".format(t, v)
+        if v is None: # Check
+            assert "var bool: {};".format(safe_k) in config["minizinc_prefix"], \
+                "Predicate {} must be a bool variable in 'minizinc_prefix' or have arity >0 and have a non-null definition in 'predicates'.".format(safe_k)
 
-        sanitized_predicates[safe_k] = {"constraint": v, "terms": terms}
+            sanitized_predicates[safe_k] = None
+        else:
+            assert re.match(r'[a-z][0-9a-z]*\([A-Z]+(,[A-Z]+)*\)', safe_k), \
+                "Predicate names must match [a-z][0-9a-z]*, terms must match [A-Z]+, the structure must conform p(A, B, ..., Z). Found {}.".format(k)
+
+            terms = re.match(r'.+\(([A-Z,]+)\)', safe_k).groups()[0].split(",")
+            for t in terms:
+                assert t in v, "Expected term {} to appear in expression '{}'.".format(t, v)
+
+            sanitized_predicates[safe_k] = {"constraint": v, "terms": terms}
 
     config["predicates"] = sanitized_predicates
 
@@ -106,7 +114,7 @@ def parse_config(filename):
     temporal_preds = {p.split("(")[0] for p in extracted_preds}
     orphans = {p.split("(")[0] for p in config["predicates"].keys()}.difference(temporal_preds)
     for p in set(config["predicates"].keys()):
-        if p.split("(")[0] in orphans:
+        if "(" in p and p.split("(")[0] in orphans:
             for t in p.split("(")[1].split(")")[0].split(","):
                 vars.add(t.strip())
 

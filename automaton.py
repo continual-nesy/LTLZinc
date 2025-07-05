@@ -40,7 +40,13 @@ class LTLAutomaton:
         """
         ltl = re.sub(r'\s*,\s*', ',', ltl)
 
-        extracted_preds = sorted(set(re.findall(r'[a-z][0-9a-z]*\([A-Z,\s]+\)', ltl)))
+        extracted_preds = set(re.findall(r'[a-z][0-9a-z]*\([A-Z,\s]+\)', ltl))
+        for k in pred_dict.keys():
+            if k in ltl:
+                extracted_preds.add(k)
+
+        extracted_preds = sorted(extracted_preds)
+
 
         assert len(extracted_preds) > 0, \
             "At least one predicate must be present in the ltl specification, found {}.".format(ltl)
@@ -52,18 +58,60 @@ class LTLAutomaton:
         encountered_preds = set()
 
         for pred in extracted_preds:
-            name = pred.split("(")[0]
-            arity = pred.count(",") + 1
-            tmp = re.sub(r'\s', '', pred).split("(")[1].split(")")[0].split(",")
+            if "(" not in pred:
+                if pred in ltl:
+                    encountered_preds.add(pred)
+            else:
+                name = pred.split("(")[0]
+                arity = pred.count(",") + 1
+                tmp = re.sub(r'\s', '', pred).split("(")[1].split(")")[0].split(",")
 
-            found = False
-            for k, v in pred_dict.items():
-                pred_name = k.split("(")[0]
-                pred_arity = k.count(",") + 1
+                found = False
+                for k, v in pred_dict.items():
+                    pred_name = k.split("(")[0]
+                    pred_arity = k.count(",") + 1
 
-                if name == pred_name and arity == pred_arity:
-                    found = True
+                    if name == pred_name and arity == pred_arity:
+                        found = True
+                        subs = {v["terms"][j]: tmp[j] for j in range(len(tmp))}
+                        chans = {}
+                        for k in tmp:
+                            if self.streams[k].startswith("-"):
+                                chans[k] = {"name": self.streams[k][1:], "direction": "output"}
+                            elif self.streams[k].startswith("+"):
+                                chans[k] = {"name": self.streams[k][1:], "direction": "input"}
+                            else:
+                                chans[k] = {"name": self.streams[k], "direction": "input"}
+
+                        propositional_name = "p_{}".format(i)
+                        self.mapping[propositional_name] = {
+                            "predicate": pred_name, "substitutions": subs,
+                            "streams": chans,
+                            "constraint": v["constraint"],
+                            "orphan": False
+                        }
+                        self.formula = self.formula.replace(pred, propositional_name)
+                        encountered_preds.add(name)
+                assert found, "Predicate {} appears in formula, but not in predicate list.".format(pred)
+                i += 1
+
+        # Adding orphan predicates (appearing in predicate list, but not in the ltl formula).
+        for p, v in pred_dict.items():
+            name = p.split("(")[0]
+            if v is None:  # Orphan predicate defined in minizinc_prefix.
+                self.mapping[name] = {
+                    "predicate": name, # There is no ambiguity since arity = 0.
+                    "substitutions": None,
+                    "streams": None,
+                    "constraint": None,
+                    "orphan": name not in encountered_preds
+                }
+            else:
+                if name not in encountered_preds:
+                    propositional_name = "p_{}".format(i) # Arity >0: there can be ambiguity after grounding. Using an incremental index.
+                    tmp = re.sub(r'\s', '', p).split("(")[1].split(")")[0].split(",")
                     subs = {v["terms"][j]: tmp[j] for j in range(len(tmp))}
+
                     chans = {}
                     for k in tmp:
                         if self.streams[k].startswith("-"):
@@ -73,43 +121,16 @@ class LTLAutomaton:
                         else:
                             chans[k] = {"name": self.streams[k], "direction": "input"}
 
-                    propositional_name = "p_{}".format(i)
                     self.mapping[propositional_name] = {
-                        "predicate": pred_name, "substitutions": subs,
+                        "predicate": name,
+                        "substitutions": subs,
                         "streams": chans,
                         "constraint": v["constraint"],
-                        "orphan": False
+                        "orphan": True
                     }
-                    self.formula = self.formula.replace(pred, propositional_name)
-                    encountered_preds.add(name)
-            assert found, "Predicate {} appears in formula, but not in predicate list.".format(pred)
-            i += 1
 
-        # Adding orphan predicates (appearing in predicate list, but not in the ltl formula).
-        for p, v in pred_dict.items():
-            name = p.split("(")[0]
-            if name not in encountered_preds:
-                propositional_name = "p_{}".format(i)
-                tmp = re.sub(r'\s', '', p).split("(")[1].split(")")[0].split(",")
-                subs = {v["terms"][j]: tmp[j] for j in range(len(tmp))}
+                    i += 1
 
-                chans = {}
-                for k in tmp:
-                    if self.streams[k].startswith("-"):
-                        chans[k] = {"name": self.streams[k][1:], "direction": "output"}
-                    elif self.streams[k].startswith("+"):
-                        chans[k] = {"name": self.streams[k][1:], "direction": "input"}
-                    else:
-                        chans[k] = {"name": self.streams[k], "direction": "input"}
-
-                self.mapping[propositional_name] = {
-                    "predicate": name, "substitutions": subs,
-                    "streams": chans,
-                    "constraint": v["constraint"],
-                    "orphan": True
-                }
-
-                i += 1
 
 
     def _build_automaton(self):
@@ -302,15 +323,16 @@ class LTLAutomaton:
 
             tmp = {}
             for symb in t.free_symbols:
-                for k, v in self.mapping[str(symb)]["streams"].items():
-                    if k in tmp:
-                        assert tmp[k] == v["name"], \
-                            "Found conflict for variable {}: {} != {}.".format(k, v["name"], tmp[k])
-                    else:
-                        assert v["name"] not in tmp.values(), \
-                            "Found conflict for variable {}: {} is already in {}".format(k, v["name"], tmp)
+                if self.mapping[str(symb)]["streams"] is not None:
+                    for k, v in self.mapping[str(symb)]["streams"].items():
+                        if k in tmp:
+                            assert tmp[k] == v["name"], \
+                                "Found conflict for variable {}: {} != {}.".format(k, v["name"], tmp[k])
+                        else:
+                            assert v["name"] not in tmp.values(), \
+                                "Found conflict for variable {}: {} is already in {}".format(k, v["name"], tmp)
 
-                    tmp[k] = v["name"]
+                        tmp[k] = v["name"]
 
             # Fill don't care streams with random values.
             for missing_stream in sorted(set(self.inverse_streams.keys()).difference(tmp.values())):

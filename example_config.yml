@@ -22,6 +22,10 @@ splits:
 # [Optional] Prefix code for all the generated MiniZinc programs. It can contain included libraries, additional constraints, helper functions, etc.
 minizinc_prefix: |
   include "all_equal.mzn";
+  
+  var bool odd; % predicate defined in the prefix. 
+  
+  constraint odd <-> X mod 2 = 1;
 
 # [Mandatory] Predicate dictionary. It maps symbolic names (e.g. p, q) to MiniZinc constraints. Placeholders (e.g., A,B,C) will be syntactically replaced.
 #   This dictionary can also contain predicates which do not appear in the formula (orphan predicates). For these, variables CANNOT be placeholders and must be instead ground variables from the "domains" section.
@@ -29,6 +33,7 @@ predicates:
   "p(A,B,C)": "A + B = C" # minizinc syntax. Variables here will be syntactically replaced with those from the formula.
   "q(A,B,C)": "all_equal([A,B,C])" # "normal" predicate, A,B,C are placeholder variables which will be replaced according to the temporal formula.
   # "r(X)": "X < 5" # This is an orphan predicate. X must be a ground variable appearing in the domain association.
+  "odd": null # Predicate of arity = 0 manually defined in  minizinc_prefix. Useful for concept-based learning and reasoning. It will be annotated, whether or not it appears in the temporal specification.
 
 
 # [Mandatory] LTL formula. It must be specified in flloat (https://github.com/whitemech/flloat) syntax.

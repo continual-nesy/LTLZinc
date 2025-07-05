@@ -47,7 +47,7 @@ class StateSampler:
         :param split: The dataset split, to select the correct domain for each variable.
         :return: Tuple (list of variable assignments for each solution, list of constraint labels for each solution).
         """
-        atoms = re.findall(r'p_[0-9]+', str(formula))
+        atoms = [k for k in self.mapping.keys() if k in str(formula)]
         cache_key = str(formula) # Note: correct, but inefficient in case of equivalent formulas/permutations (e.g. "p_0 & !p_1" vs "!p_1 & p_0").
         # Storing only the (sorted) atoms or literals is wrong
         # (i.e. "p_0" would collide with "!p_0" in the first case, and "p_0 & !p_1" would collide with "p_0 | !p_1" in the second).
@@ -58,7 +58,8 @@ class StateSampler:
             problem = self.prefix
             problem += "\n"
             for p in self.props:
-                problem += "var bool: {};\n".format(p)
+                if self.mapping[p]["substitutions"] is not None:
+                    problem += "var bool: {};\n".format(p)
             problem += "\n"
 
             numeric_types = set()
@@ -87,7 +88,11 @@ class StateSampler:
 
             # Define reified constraints.
             for k, v in self.mapping.items():
-                problem += "constraint {} <-> ({});\n".format(k, self._substitute(v["constraint"], v["substitutions"]))
+                #if v["substitutions"] is None:
+                #    problem += "constraint {} <-> {};\n".format(k, v["predicate"]) # Alias pred with p_pred.
+                #else:
+                if v["substitutions"] is not None:
+                    problem += "constraint {} <-> ({});\n".format(k, self._substitute(v["constraint"], v["substitutions"]))
 
             # Define current transition constraint.
             if str(formula) != "True":
@@ -119,7 +124,8 @@ class StateSampler:
             # (0)/(1) -> constraint is irrelevant for the current transition, but, given the chosen variable assignments, it was False/True.
             for k, v in rnd_sol[i].__dict__.items():
                 if not k.startswith("_"):
-                    if k.startswith("p_"):
+#                    if k.startswith("p_"):
+                    if k in self.mapping.keys():
                         if k in atoms and cache_key != "True":
                             labels[-1][k] = "1" if v else "0"
                         else:

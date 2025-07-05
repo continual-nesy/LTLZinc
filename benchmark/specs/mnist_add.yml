@@ -3,20 +3,27 @@
 
 mode: sequential_positive_only
 
-length: 1
+length: 10
 
 splits:
-  train: {path: "data/train", samples: 8000}
-  val:   {path: "data/test", samples: 1000}
-  test:  {path: "data/test", samples: 1000}
+  train: {path: "data/train", samples: 80}
+  val:   {path: "data/test", samples: 10}
+  test:  {path: "data/test", samples: 10}
 
 minizinc_prefix: |
   include "all_different.mzn";
+  
+  var bool: odd;
+  var bool: even;
+  constraint odd <-> C mod 2 = 1;
+  constraint odd <-> not even;
 
 predicates:
   "p(A,B,C)": "A + B = C"
+  "odd": ~ # If the value is "~" or null, it expects predicates to be defined in minizinc_prefix.
+  "even": ~
 
-formula: "G p(A,B,C)"
+formula: "G p(A,B,C) & G (odd <-> WX even)"
 
 types:
   mnist_t:
